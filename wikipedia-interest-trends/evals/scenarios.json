@@ -179,6 +179,11 @@
           "turn": 1
         },
         {
+          "type": "hedged_causes",
+          "why": "no invented market explanations",
+          "turn": 1
+        },
+        {
           "type": "max_tool_calls",
           "n": 18
         }
@@ -209,6 +214,10 @@
           "type": "answer_regex",
           "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
           "why": "mandatory caveat"
+        },
+        {
+          "type": "hedged_causes",
+          "why": "no invented market explanations"
         },
         {
           "type": "max_tool_calls",
@@ -270,7 +279,7 @@
         },
         {
           "type": "answer_regex",
-          "pattern": "ambig|several|multiple|could (also )?mean|other meaning|disambig|which Mercury",
+          "pattern": "ambig|several|multiple|could (also )?mean|meanings|other meaning|disambig|which Mercury|chemical element|not the (element|planet)",
           "why": "the user must be told the term is ambiguous"
         },
         {

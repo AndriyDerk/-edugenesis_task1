@@ -158,6 +158,16 @@ def run_check(check: dict[str, Any], tr: dict[str, Any]) -> tuple[bool, str]:
         bad = numbers_problems(ans, tr["workspace"], extra_ok=prompt, transcript=tr)
         n = len(PCT_RE.findall(ans))
         return not bad, (f"{n} figure(s), all match the analysis" if not bad else f"unverified: {bad}")
+    if kind == "hedged_causes":
+        # causal claims about markets must be marked as hypotheses: the data shows what, not why
+        causes = re.compile(r"конкурент|насичен|економі|міграц|емігр|культур|менталіт|competit|saturat|econom|"
+                            r"migrat|cultur|because of", re.IGNORECASE)
+        hedge = re.compile(r"може|можлив|гіпотез|припущ|перевір|імовірн|ймовірн|might|may |possib|hypothes|"
+                           r"check|perhaps|likely", re.IGNORECASE)
+        text = _answer(tr, turn)
+        bad = [s_.strip()[:90] for s_ in re.split(r"(?<=[.!?])\s+|\n", text)
+               if causes.search(s_) and not hedge.search(s_)]
+        return not bad, ("ok" if not bad else f"unhedged cause: {bad[0]}")
     if kind == "max_tool_calls":
         n = sum(len(t["tool_calls"]) for t in tr["turns"])
         return n <= check["n"], f"{n} tool calls (limit {check['n']})"

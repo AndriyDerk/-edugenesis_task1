@@ -178,3 +178,17 @@ def test_client_gives_up_and_explains_proxy_block():
     with pytest.raises(NetError) as exc:
         c.get_json("http://x")
     assert exc.value.status == 500 and c.stats["requests"] == 3
+
+
+def test_client_does_not_retry_unknown_hosts():
+    import socket
+    calls = []
+
+    def dns_fail(req, timeout):
+        calls.append(1)
+        raise urllib.error.URLError(socket.gaierror(-2, "Name or service not known"))
+
+    c = Client("ua", rps=1000, opener=dns_fail, sleep=lambda s: None)
+    with pytest.raises(NetError) as exc:
+        c.get_json("https://xx.wikipedia.org/w/api.php")
+    assert "unknown host xx.wikipedia.org" in str(exc.value) and len(calls) == 1

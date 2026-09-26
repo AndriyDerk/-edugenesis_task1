@@ -12,12 +12,14 @@ import gzip
 import http.client
 import json
 import random
+import socket
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 
@@ -145,6 +147,10 @@ class Client:
             except (urllib.error.URLError, http.client.HTTPException, TimeoutError, ConnectionError, OSError) as exc:
                 reason = getattr(exc, "reason", exc)
                 text = str(reason)
+                if isinstance(reason, socket.gaierror):
+                    host = urllib.parse.urlsplit(url).hostname
+                    raise NetError(f"unknown host {host} (check the language code, or DNS/network access)",
+                                   url=url) from None
                 if "Tunnel connection failed: 403" in text or "403 Forbidden" in text:
                     host = urllib.parse.urlsplit(url).hostname
                     raise NetError(

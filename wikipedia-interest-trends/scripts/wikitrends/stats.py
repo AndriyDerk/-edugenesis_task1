@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Callable, Sequence
+from collections.abc import Callable, Sequence
 
 
 def median(xs: Sequence[float]) -> float:

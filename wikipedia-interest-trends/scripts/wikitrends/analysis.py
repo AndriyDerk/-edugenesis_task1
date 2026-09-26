@@ -42,7 +42,8 @@ class Params:
     search_lang: str = "en"
     agent: str = "user"
     include_redirects: bool = True
-    max_redirects: int = 30
+    max_redirects: int = 10
+    max_requests: int = 400
     platform_split: bool = True
     geo: bool = True
     weights: dict[str, float] | None = None
@@ -106,9 +107,9 @@ def direction_of(yoy: dict[str, Any]) -> str:
     lo, hi = yoy["ci"]
     p = yoy["sign_p"]
     if lo is not None and lo > 0 and p < 0.10:
-        return "growing"
+        return "slightly growing" if hi is not None and hi <= 0.10 else "growing"
     if hi is not None and hi < 0 and p < 0.10:
-        return "declining"
+        return "slightly declining" if lo is not None and lo >= -0.10 else "declining"
     if lo is not None and hi is not None and lo >= -0.10 and hi <= 0.10:
         return "stable"
     if v > 0 and ((lo is not None and lo > 0) or p < 0.10):
@@ -233,7 +234,7 @@ def assess_confidence(cell: dict[str, Any]) -> dict[str, Any]:
     direction = mt["direction"]
     lo, hi = y["ci"]
     agree = y["months_up"] if (y["value"] or 0) >= 0 else y["months_down"]
-    if direction in ("growing", "declining"):
+    if direction in ("growing", "declining", "slightly growing", "slightly declining"):
         add(0, "consistent", agree=agree, lo=lo, hi=hi)
     elif direction == "stable":
         add(0, "stable", lo=lo, hi=hi)
@@ -468,8 +469,8 @@ def rank_cells(cells: list[dict[str, Any]], weights: dict[str, float] | None = N
             "components": {k: round(scaled[k][i], 3) for k in DEFAULT_WEIGHTS},
             "inputs": {
                 "avg_monthly_views": c["metrics"]["avg_monthly_last12"],
-                "growth_vs_wiki": (c["metrics"].get("yoy_normalized") or {}).get("value"),
-                "growth": c["metrics"]["yoy"]["value"],
+                "growth_vs_wiki": (c["metrics"].get("yoy_normalized") or {}).get("value") if growth_valid(c) else None,
+                "growth": c["metrics"]["yoy"]["value"] if growth_valid(c) else None,
                 "per_million": c["metrics"].get("per_million_last12"),
                 "confidence": c["confidence"]["grade"],
             },
@@ -478,15 +479,18 @@ def rank_cells(cells: list[dict[str, Any]], weights: dict[str, float] | None = N
         })
     for a, b in zip(rows, rows[1:]):
         a["gap_to_next"] = round(a["score"] - b["score"], 1)
-    ties = []
-    group: list[str] = []
-    for row in rows[:6]:
-        group.append(row["cell"])
-        if row.get("gap_to_next") is None or row["gap_to_next"] >= TIE_POINTS:
-            # only ties that matter for the decision: involving one of the top 3 places
-            if len(group) > 1 and rows[[r["cell"] for r in rows].index(group[0])]["rank"] <= 3:
-                ties.append(group)
-            group = []
+    # Tie groups are anchored on their best member (no chaining: 76, 74, 72, 70 is not one tie).
+    ties: list[list[str]] = []
+    i = 0
+    while i < len(rows):
+        j = i + 1
+        while j < len(rows) and rows[i]["score"] - rows[j]["score"] < TIE_POINTS:
+            j += 1
+        if j - i > 1 and rows[i]["rank"] <= 3:  # only ties that matter for the top choices
+            ties.append([r["cell"] for r in rows[i:j]])
+            for r in rows[i:j]:
+                r["tied"] = True
+        i = j
     return {
         "dimension": dimension,
         "weights": primary,
@@ -640,6 +644,11 @@ def run(wiki: Wiki, params: Params) -> dict[str, Any]:
                                 max_redirects=params.max_redirects, ui_lang=params.ui_lang)
     before = dict(wiki.client.stats)
 
+    warnings = list(resolution["warnings"])
+    trimmed = _fit_budget(resolution, params)
+    if trimmed is not None:
+        warnings.append(f"request budget ({params.max_requests}): counted only the first {trimmed} redirect(s) "
+                        "per article; raise --max-requests for completeness")
     keys: list[SeriesKey] = []
     for topic in resolution["topics"]:
         for lang in params.langs:
@@ -654,7 +663,6 @@ def run(wiki: Wiki, params: Params) -> dict[str, Any]:
 
     data, errors = wiki.fetch_series(keys, window.start, window.end)
     pdata, perrors = wiki.fetch_series(project_keys, window.start, window.end)
-    warnings = list(resolution["warnings"])
     for key, err in perrors.items():
         warnings.append(f"wiki-wide traffic for {key.project} unavailable ({err}); normalised metrics skipped")
 
@@ -689,6 +697,7 @@ def run(wiki: Wiki, params: Params) -> dict[str, Any]:
             "agent": params.agent,
             "include_redirects": params.include_redirects,
             "max_redirects": params.max_redirects,
+            "max_requests": params.max_requests,
             "platform_split": params.platform_split,
             "weights": params.weights,
             "ui_lang": params.ui_lang,
@@ -709,6 +718,27 @@ def run(wiki: Wiki, params: Params) -> dict[str, Any]:
                   "failed_series": len(errors) + len(perrors)},
     }
     return results
+
+
+def _fit_budget(resolution: dict[str, Any], params: Params) -> int | None:
+    """Trim redirects per article so the worst-case number of series stays within
+    ``params.max_requests``. Returns the redirect cap applied, or None."""
+    arts = [a for t in resolution["topics"] for lang in params.langs for a in t["cells"][lang]["articles"]]
+    base = len(arts) * (2 if params.platform_split else 1) + len(params.langs)
+
+    def cost(k: int) -> int:
+        return base + sum(min(len(a["redirects"]), k) for a in arts)
+
+    k = max((len(a["redirects"]) for a in arts), default=0)
+    if cost(k) <= params.max_requests:
+        return None
+    while k > 0 and cost(k) > params.max_requests:
+        k -= 1
+    for a in arts:
+        if len(a["redirects"]) > k:
+            a["redirects"] = a["redirects"][:k]
+            a["redirects_truncated"] = True
+    return k
 
 
 def rerank(results: dict[str, Any], weights: dict[str, float] | None) -> dict[str, Any]:

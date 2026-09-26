@@ -130,7 +130,7 @@ def resolve_topics(
     target_langs: list[str],
     search_lang: str = "en",
     include_redirects: bool = True,
-    max_redirects: int = 30,
+    max_redirects: int = 10,
     ui_lang: str = "en",
 ) -> dict[str, Any]:
     if not topics:

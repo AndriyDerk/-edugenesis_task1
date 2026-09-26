@@ -6,7 +6,7 @@ from __future__ import annotations
 import datetime as dt
 import math
 from dataclasses import dataclass
-from typing import Sequence
+from collections.abc import Sequence
 
 from .stats import median
 

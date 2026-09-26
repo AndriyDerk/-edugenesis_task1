@@ -12,7 +12,8 @@ import sys
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import Any
+from collections.abc import Callable, Iterable
 
 from . import config, langs
 from .cache import Cache
@@ -96,7 +97,9 @@ class Wiki:
                 tasks.append((key, a, b))
         errors: dict[SeriesKey, str] = {}
         if tasks:
-            self.progress(f"fetching {len(tasks)} pageview series ({len(keys) - len({t[0] for t in tasks})} of {len(keys)} fully cached)")
+            eta = len(tasks) * self.client.limiter.interval  # the shared rate limit is the bottleneck
+            self.progress(f"fetching {len(tasks)} pageview series, about {eta:.0f}s "
+                          f"({len(keys) - len({t[0] for t in tasks})} of {len(keys)} already cached)")
             done = 0
             with ThreadPoolExecutor(max_workers=self.workers) as pool:
                 futures = {pool.submit(self._download, k, a, b): (k, a, b) for k, a, b in tasks}
@@ -158,7 +161,7 @@ class Wiki:
                 responses[-1]["_truncated"] = True
         return responses
 
-    def page_info(self, lang: str, titles: list[str], max_redirects: int = 30) -> dict[str, dict[str, Any]]:
+    def page_info(self, lang: str, titles: list[str], max_redirects: int = 10) -> dict[str, dict[str, Any]]:
         """Canonical title, Wikidata id, disambiguation flag and incoming
         redirects for each input title (input titles may themselves be redirects)."""
         out: dict[str, dict[str, Any]] = {}
@@ -208,7 +211,8 @@ class Wiki:
                     seen.add(canonical)
                     canonical = mapping[canonical]
                 page = pages.get(canonical, {"title": canonical, "missing": True, "redirects": []})
-                redirects = sorted(set(page.get("redirects", [])))
+                # keep API order (by redirect page id, i.e. oldest first: old titles of moved pages)
+                redirects = list(dict.fromkeys(page.get("redirects", [])))
                 info = {
                     "input": t,
                     "title": page["title"],

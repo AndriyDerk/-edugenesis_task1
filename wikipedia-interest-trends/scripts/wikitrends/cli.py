@@ -139,7 +139,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     ui = i18n.ui(args.lang)
     params = analysis.Params(
         topics=topics, langs=codes, window=window, search_lang=args.search_lang, agent=args.agent,
-        include_redirects=not args.no_redirects, max_redirects=args.max_redirects,
+        include_redirects=not args.no_redirects, max_redirects=args.max_redirects, max_requests=args.max_requests,
         platform_split=not args.no_platform, geo=not args.no_geo, weights=weights, ui_lang=ui, notes=notes)
     wiki = _make_wiki(args)
     results = analysis.run(wiki, params)
@@ -179,7 +179,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps({"results": str(results_path), "files": files}, ensure_ascii=False))
     else:
-        print(console_summary(results, files))
+        print(console_summary(results, files, ui))
         print(f"\nNext: share -> python scripts/wt.py report {outdir} --lang {ui} --summary \"...\" ; "
               f"re-weight -> python scripts/wt.py rank {outdir} --weights growth-first")
     return 0
@@ -234,11 +234,17 @@ def cmd_rank(args: argparse.Namespace) -> int:
     print(f"Ranking by {ranking['dimension']} (weights {wts}); results.json updated:")
     for row in ranking["rows"]:
         inp = row["inputs"]
+        tie = "  (≈ tie)" if row.get("tied") else ""
         print(f"  {row['rank']}. {row['label']:<24} score {row['score']:5.1f} | views/mo "
-              f"{i18n.fmt_compact(inp['avg_monthly_views'])} | growth {i18n.fmt_pct(inp['growth'])} | vs wiki "
-              f"{i18n.fmt_pct(inp['growth_vs_wiki'])} | per-million {inp['per_million']} | {inp['confidence']}")
+              f"{i18n.fmt_compact(inp['avg_monthly_views'])} | growth {i18n.fmt_pct(inp['growth'])} | "
+              f"topic share of wiki {i18n.fmt_pct(inp['growth_vs_wiki'])} | {inp['confidence']}{tie}")
     print(f"top pick agreement across presets: {ranking['top_agreement']} "
           f"({'robust' if ranking['top_stable'] else 'depends on priorities'})")
+    by_id = {c["id"]: c for c in results["cells"]}
+    for group in ranking.get("ties", []):
+        print("practically tied (within 3 points, choose by priority): "
+              + ", ".join(by_id[c]["label"] for c in group))
+    print("Views are page views, not unique people. Quote scores and numbers exactly as printed.")
     return 0
 
 
@@ -338,7 +344,8 @@ def _add_topic_args(p: argparse.ArgumentParser) -> None:
                         "en:TOEFL Q1860 . Repeatable.")
     p.add_argument("--langs", required=True, help="Wikipedia language codes, comma separated: pl,cs,uk")
     p.add_argument("--search-lang", default="en", help="wiki used to search free-text topics (default en)")
-    p.add_argument("--max-redirects", type=int, default=30, help="redirects counted per article (default 30)")
+    p.add_argument("--max-redirects", type=int, default=10,
+                   help="redirects counted per article, oldest first (default 10)")
 
 
 def _add_period_args(p: argparse.ArgumentParser, default_months: int | None = 24) -> None:
@@ -368,6 +375,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="traffic type (default user = humans)")
     a.add_argument("--no-redirects", action="store_true", help="count only the main article titles")
     a.add_argument("--no-platform", action="store_true", help="skip desktop/mobile split (fewer requests)")
+    a.add_argument("--max-requests", type=int, default=400,
+                   help="upper bound on pageview series per run; redirects are trimmed to fit (default 400)")
     a.add_argument("--no-geo", action="store_true", help="skip reader-country lookup")
     a.add_argument("--weights", help="ranking weights: preset (balanced, growth-first, size-first, niche-first) "
                                      "or reach=0.3,momentum=0.4,intensity=0.2,confidence=0.1")

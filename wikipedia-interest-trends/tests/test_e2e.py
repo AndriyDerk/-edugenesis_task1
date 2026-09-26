@@ -205,3 +205,13 @@ def test_pdf_stays_one_page_under_pressure(run_cli):
     assert code == 0
     pages, text = _pdf_text(folder / "report.pdf")
     assert pages == 1
+
+
+def test_request_budget_trims_redirects(run_cli):
+    code, out, _ = run_cli("analyze", "--topic", "intermittent fasting", "--langs", "en,pl", "--max-requests", "6",
+                           "--no-charts")
+    assert code == 0
+    res, _ = _results(out)
+    assert any("request budget" in w for w in res["warnings"])
+    assert all(a["redirects"] == 0 for c in res["cells"] for a in c["articles"])
+    assert any(f["code"] == "redirects_truncated" for c in res["cells"] for f in c["flags"])

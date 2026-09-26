@@ -18,7 +18,8 @@ import sqlite3
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
+from collections.abc import Callable, Iterable
 
 Date = dt.date
 

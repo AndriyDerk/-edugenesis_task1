@@ -35,7 +35,7 @@ once, then retry.
 
 Rules for the arguments:
 
-- **Topic**: give the English name (e.g. "Intermittent fasting"), a Wikidata id (`Q11412`) or an exact
+- **Topic**: give the English name (e.g. "Intermittent fasting"), a Wikidata id (`Q333` = astronomy) or an exact
   article (`uk:Астрономія`). The tool finds the same article in every language through Wikidata.
   **Never translate article titles yourself.**
 - **Basket** (`--basket NAME ITEM ITEM...`): use when the interest is spread over several articles.
@@ -52,6 +52,8 @@ Rules for the arguments:
 
 `analyze` prints a compact summary (about 40 lines). Before answering, check the first lines:
 
+- A line starting with `!! CHECK TOPIC` means the topic was ambiguous or only approximately found.
+  Tell the user which meaning was analysed and name the alternatives, or re-run with the right `Q...` id.
 - `Topic "...": Q... "label" (description) via exact title | top search result`. If the chosen
   article is not what the user meant (see `other candidates`), re-run with the right `Q...` id.
   Use `resolve --topic X --langs ...` to preview mappings without downloading pageviews.
@@ -65,7 +67,8 @@ Write the answer in the user's language with exactly these parts, briefly:
 
 1. **Verdict**: one or two sentences that answer the question (which language/topic; growing or not).
 2. **Evidence**: 2-5 bullets with numbers **copied from `Findings` or the table**. Do not compute
-   new numbers, ratios or averages yourself.
+   new numbers, ratios or averages yourself. With `--lang uk` the Findings are already written in
+   Ukrainian: copy those sentences instead of translating the table.
 3. **Confidence**: the grade and its main reason. For rankings, say whether the top pick is robust
    ("same under all 4 weighting presets") and name options the output marks as tied.
 4. **Next step**: one concrete way to validate (landing page, ad test, keyword volumes) and one
@@ -81,11 +84,13 @@ How to read the key fields:
 
 | Field | Meaning |
 |---|---|
-| `YoY w/o spikes [90% CI]` | Growth of the last 12 months vs the previous 12, after removing short bursts. The range is the 90% uncertainty interval. |
+| `topic YoY w/o spikes [90% CI]` | Growth of the last 12 months vs the previous 12, after removing short bursts. The range is the 90% uncertainty interval. |
 | `months up` | In how many of the 12 months views were higher than a year earlier (consistency). |
-| `vs wiki` | Growth relative to all traffic of that Wikipedia. Most Wikipedias are shrinking, so use this to separate topic interest from platform decline. |
-| `trend` | growing / likely growing / stable / inconclusive / likely declining / declining / new-article |
+| `whole wiki YoY` | How all traffic of that language Wikipedia changed (often negative). |
+| `topic share of wiki YoY` | Growth of the topic *relative to* its whole Wikipedia. Use it to separate topic interest from platform-wide change. It is not the change of the wiki itself. |
+| `trend` | growing / slightly growing (whole CI below +10 %) / likely growing / stable / inconclusive / likely declining / slightly declining / declining / new-article |
 | `confidence` | HIGH / MEDIUM / LOW with a 0-100 score; the reasons are printed under Caveats. |
+| `views/mo` | Page views per month, **not** people or users. |
 | Ranking `score` | 0-100 on fixed scales for audience size, growth vs wiki, topic salience and data reliability. |
 
 Hard rules:

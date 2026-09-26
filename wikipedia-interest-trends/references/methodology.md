@@ -55,7 +55,8 @@ Let `prev` = the 12 months before the last 12, `last` = the last 12 complete mon
 | Platform YoY | Desktop and mobile (all minus desktop) YoY for the main titles. |
 
 **Direction** (from the clean YoY):
-`growing` = CI above 0 **and** sign test p < 0.10; `declining` symmetric; `stable` = CI inside ±10 %;
+`growing` = CI above 0 **and** sign test p < 0.10 (`slightly growing` if the whole CI is below +10 %);
+`declining` symmetric; `stable` = CI inside ±10 % but not significant;
 `likely growing/declining` = only one of the two tests agrees; otherwise `inconclusive`.
 
 ## 4. Confidence grade (`assess_confidence`)

@@ -4,9 +4,9 @@
 
 | Pattern in the output | What to say |
 |---|---|
-| `growing`, HIGH, `vs wiki` also positive | Real, broad growth in interest. Strong candidate for validation. |
-| `growing` but `vs wiki` negative | The topic grows less than the whole wiki: interest is not really rising relative to overall usage. |
-| raw growth positive, `vs wiki` even higher | The whole wiki is shrinking (common since 2024); the topic gains share. Positive signal. |
+| `growing`, HIGH, `topic share of wiki YoY` also positive | Real, broad growth in interest. Strong candidate for validation. |
+| `growing` but `topic share of wiki YoY` negative | The topic grows less than the whole wiki: interest is not really rising relative to overall usage. |
+| topic growth positive, `topic share of wiki YoY` even higher | The whole wiki is shrinking (common since 2024); the topic gains share. Positive signal. |
 | `stable`, HIGH | Mature, steady demand. Decide on size (`views/mo`) rather than momentum. |
 | `inconclusive` / LOW | Not enough evidence either way. Recommend a longer period (`--months 36`) or a broader basket. |
 | `new-article` | The article is new; growth cannot be measured yet. Report the current level only. |
@@ -30,7 +30,7 @@ search-keyword volumes, app-store keyword research, or a small ad test.
 | ar | Many countries with very different markets. |
 | zh | Wikipedia is blocked in mainland China; readers are mostly from Taiwan, Hong Kong and the diaspora. |
 | ru | Readers from Russia, Ukraine, Belarus, Kazakhstan and elsewhere. Since 2022 many Ukrainians have moved from ru to uk Wikipedia, which shifts traffic between these two editions. |
-| uk | Traffic has grown as users switched from Russian. Topic growth partly reflects that; check `vs wiki`. |
+| uk | Traffic has grown as users switched from Russian. Topic growth partly reflects that; check `topic share of wiki YoY`. |
 | ko | Korean Wikipedia is small relative to speakers (Namuwiki is popular); volumes understate interest. |
 | ja | Large and stable edition; Japanese readers use Wikipedia heavily. |
 | hi, bn, ur, ta, ... | Many speakers read English Wikipedia; small volumes understate interest. |
@@ -65,4 +65,4 @@ Files: <pdf / charts paths>
 ```
 
 Ukrainian terms: зростання рік до року (YoY), довірчий інтервал (CI), відносно всієї Вікіпедії
-(vs wiki), довіра висока/середня/низька (confidence), сплески (spikes), кошик статей (basket).
+(topic share of wiki YoY), довіра висока/середня/низька (confidence), сплески (spikes), кошик статей (basket).

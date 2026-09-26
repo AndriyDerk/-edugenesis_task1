@@ -17,7 +17,8 @@ Resolve topics, download pageviews (cached), compute metrics, write charts and s
 | `--start YYYY-MM` / `--end YYYY-MM` | Explicit window (overrides `--months`). |
 | `--search-lang en` | Wikipedia used to search free-text topics. Use `uk` for Ukrainian queries. |
 | `--agent user` | `user` (humans, default), `all-agents`, `automated`, `spider`. |
-| `--no-redirects` | Count only the main titles (default: add redirects, up to `--max-redirects 30`). |
+| `--no-redirects` | Count only the main titles (default: add redirects, oldest first, up to `--max-redirects 10`). |
+| `--max-requests 400` | Upper bound on downloaded series per run (about 2.5 per second); redirects are trimmed to fit and a warning says so. |
 | `--no-platform` | Skip the desktop/mobile split (fewer requests; no bot-like spike labels). |
 | `--no-geo` | Skip reader-country lookup. |
 | `--weights` | `balanced` (default), `growth-first`, `size-first`, `niche-first`, or `reach=0.3,momentum=0.4,intensity=0.2,confidence=0.1`. |

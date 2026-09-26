@@ -17,6 +17,7 @@ dev = [
     "pypdf>=4",
     "pymannkendall>=1.4",
     "skills-ref>=0.1; python_version >= '3.11'",
+    "ruff>=0.6",
 ]
 
 [tool.uv]
@@ -26,3 +27,11 @@ package = false
 testpaths = ["tests"]
 pythonpath = ["scripts"]
 addopts = "-q"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "UP"]
+ignore = ["E501", "E741", "B905", "UP036", "UP037"]

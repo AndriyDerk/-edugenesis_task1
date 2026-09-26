@@ -32,8 +32,10 @@ def _articles_line(cell: dict[str, Any]) -> str:
     return f"  {cell['lang']}: {topic}{'; '.join(parts)}{missing}"
 
 
-def console_summary(results: dict[str, Any], files: dict[str, str] | None = None) -> str:
-    """Compact English summary (~40 lines) designed for an LLM agent to read."""
+def console_summary(results: dict[str, Any], files: dict[str, str] | None = None, lang: str = "en") -> str:
+    """Compact summary (~40 lines) designed for an LLM agent to read. Structure is
+    English; Findings and Caveats are in ``lang`` so they can be quoted verbatim."""
+    lang = i18n.ui(lang)
     lines: list[str] = []
     w = results["window"]
     p = results["params"]
@@ -104,7 +106,7 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
                 why.append("strong: " + ", ".join(row["strengths"]))
             if row["weaknesses"]:
                 why.append("weak: " + ", ".join(row["weaknesses"]))
-            tie = "  (≈ tied with next)" if row.get("gap_to_next") is not None and row["gap_to_next"] < 3 else ""
+            tie = "  (≈ tie)" if row.get("tied") else ""
             lines.append(f"  {row['rank']}. {row['label']}  score {row['score']:.1f}{tie}  " + "; ".join(why))
         if ranking["top_stable"]:
             lines.append(f"  top pick is the same under all {ranking['top_agreement']} weighting presets (robust)")
@@ -113,10 +115,11 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
             lines.append(f"  top pick depends on weights ({ranking['top_agreement']} presets agree): {alts}")
 
     lines.append("")
-    lines.append("Findings (quote these; do not invent numbers):")
-    for f in findings(results, "en"):
+    note = "" if lang == "en" else f" - already in the user's language ({lang}), copy them as they are"
+    lines.append(f"Findings (quote these; do not invent numbers){note}:")
+    for f in findings(results, lang):
         lines.append(f"- {f}")
-    cav = caveats(results, "en")
+    cav = caveats(results, lang)
     if cav:
         lines.append("Caveats:")
         for c in cav:

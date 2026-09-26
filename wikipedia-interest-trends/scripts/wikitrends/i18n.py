@@ -65,9 +65,10 @@ def fmt_pp(x: float | None, lang: str = "en") -> str:
 
 
 def fmt_p(p: float | None, lang: str = "en") -> str:
+    """'p<0.001' / 'p=0.042' (includes the relation sign)."""
     if p is None:
-        return "n/a"
-    s = "<0.001" if p < 0.001 else f"{p:.3f}" if p < 0.1 else f"{p:.2f}"
+        return "p=n/a"
+    s = "p<0.001" if p < 0.001 else f"p={p:.3f}" if p < 0.1 else f"p={p:.2f}"
     return s.replace(".", ",") if lang == "uk" else s
 
 
@@ -85,10 +86,12 @@ MONTHS = {
 
 # ---------------------------------------------------------------------- words
 DIRECTION = {
-    "en": {"growing": "growing", "likely growing": "likely growing", "stable": "stable",
+    "en": {"growing": "growing", "slightly growing": "slightly growing", "slightly declining": "slightly declining",
+           "likely growing": "likely growing", "stable": "stable",
            "likely declining": "likely declining", "declining": "declining",
            "inconclusive": "no clear trend", "no-baseline": "no baseline", "new-article": "new article"},
-    "uk": {"growing": "зростає", "likely growing": "імовірно зростає", "stable": "стабільно",
+    "uk": {"growing": "зростає", "slightly growing": "слабко зростає", "slightly declining": "слабко спадає",
+           "likely growing": "імовірно зростає", "stable": "стабільно",
            "likely declining": "імовірно спадає", "declining": "спадає",
            "inconclusive": "без чіткого тренду", "no-baseline": "немає бази порівняння",
            "new-article": "нова стаття"},
@@ -222,8 +225,8 @@ TEXT = {
         "headline_new": "{name} — new article (first views {date}): year-over-year growth is not meaningful yet; "
                         "≈{avg} views/month recently; confidence {grade}.",
         "up": "higher", "down": "lower",
-        "normalized": "The whole {wiki} changed {project} YoY; relative to it (share of all its views), "
-                      "interest in {name} changed {norm}.",
+        "normalized": "{name}: the whole {wiki} changed {project} YoY; relative to it (share of all its views), "
+                      "interest in the topic changed {norm}.",
         "compare": "{a} vs {b}: growth differs by {diff} pp (90% CI {lo}…{hi}) → {verdict}.",
         "faster": "{x} grew faster", "no_difference": "no clear difference",
         "not_comparable": "not comparable",
@@ -236,7 +239,7 @@ TEXT = {
         "spike": "Largest spike: {date} in {name} (x{ratio} of normal, {kind}); excluded from the trend.",
         "accelerating": "accelerating", "slowing": "slowing",
         "momentum": "Momentum in {name} is {accel}: last 3 months {last3} YoY vs {yoy} over 12 months.",
-        "longrun": "Long-run trend for {name} over {n} months: {sen}/year (seasonal Kendall p={p}).",
+        "longrun": "Long-run trend for {name} over {n} months: {sen}/year (seasonal Kendall {p}).",
         "missing": "{name}: no article exists, so this language cannot be measured for the topic.",
         "geo": "Readers of {wiki} are mostly in: {countries}.",
     },
@@ -247,10 +250,10 @@ TEXT = {
         "headline_new": "{name} — нова стаття (перші перегляди {date}): порівняння рік до року ще неможливе; "
                         "≈{avg} перегл./міс. останнім часом; довіра {grade}.",
         "up": "вище", "down": "нижче",
-        "normalized": "Уся {wiki} змінилась на {project} р/р; відносно неї (частка в усіх її переглядах) "
-                      "інтерес до «{name}» змінився на {norm}.",
-        "compare": "{a} проти {b}: різниця зростання {diff} п.п. (90% ДІ {lo}…{hi}) → {verdict}.",
-        "faster": "{x} зростає швидше", "no_difference": "чіткої різниці немає",
+        "normalized": "{name}: уся {wiki} змінилась на {project} р/р; відносно неї (частка в усіх її "
+                      "переглядах) інтерес до теми змінився на {norm}.",
+        "compare": "Порівняння «{a}» і «{b}»: різниця зростання {diff} п.п. (90% ДІ {lo}…{hi}) → {verdict}.",
+        "faster": "швидше зростає: {x}", "no_difference": "чіткої різниці немає",
         "not_comparable": "непорівнювано",
         "ranking": "Найперспективніший варіант ({dimension}): {label} (бал {score}/100){stability}.",
         "rank_stable": "; перемагає за всіх {n} схем ваг",
@@ -260,8 +263,8 @@ TEXT = {
         "dimension": {"language": "мова", "topic": "тема", "topic x language": "тема × мова"},
         "spike": "Найбільший сплеск: {date}, {name} (×{ratio} від норми, {kind}); виключено з тренду.",
         "accelerating": "прискорюється", "slowing": "сповільнюється",
-        "momentum": "Динаміка «{name}» {accel}: останні 3 міс. {last3} р/р проти {yoy} за 12 міс.",
-        "longrun": "Довгостроковий тренд «{name}» за {n} міс.: {sen}/рік (сезонний тест Кендалла p={p}).",
+        "momentum": "{name}: динаміка {accel} — останні 3 міс. {last3} р/р проти {yoy} за 12 міс.",
+        "longrun": "{name}: довгостроковий тренд за {n} міс. {sen}/рік (сезонний тест Кендалла {p}).",
         "missing": "{name}: статті немає, тож цю мову для теми виміряти неможливо.",
         "geo": "Читачі {wiki} переважно з: {countries}.",
     },

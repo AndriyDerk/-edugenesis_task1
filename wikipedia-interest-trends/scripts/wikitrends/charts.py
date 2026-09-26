@@ -124,7 +124,7 @@ def growth_chart(results: dict[str, Any], path: Path, lang: str) -> Path | None:
     y = list(range(len(cells)))[::-1]
     colors = [GRADE_COLORS[c["confidence"]["grade"]] for c in cells]
     ax.barh(y, vals, color=colors, alpha=0.8, height=0.55)
-    for yi, v, lo, hi in zip(y, vals, los, his):
+    for yi, lo, hi in zip(y, los, his):
         if lo is not None and hi is not None:
             ax.plot([lo, hi], [yi, yi], color="#0f172a", lw=1.1)
             ax.plot([lo, lo], [yi - 0.12, yi + 0.12], color="#0f172a", lw=1.1)
