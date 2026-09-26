@@ -11,7 +11,7 @@ Resolve topics, download pageviews (cached), compute metrics, write charts and s
 | Option | Meaning |
 |---|---|
 | `--topic TEXT` | Free text (English preferred), `Q123` Wikidata id, or `lang:Title`. Repeat to compare topics. |
-| `--basket NAME ITEM [ITEM...]` | One topic made of several articles; items as for `--topic`. Repeatable. |
+| `--basket ITEM [ITEM...] [name=LABEL]` | One topic made of several articles; items as for `--topic`; `name=` labels it (default: first item + count). Repeatable. |
 | `--langs pl,cs,uk` | Wikipedia language codes (required). Common mistakes are corrected (`ua` -> `uk`, `cz` -> `cs`). Max 25. |
 | `--months N` | Last N complete months (default 24; shorter windows are extended to 24). |
 | `--start YYYY-MM` / `--end YYYY-MM` | Explicit window (overrides `--months`). |

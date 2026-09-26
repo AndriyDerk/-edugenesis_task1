@@ -72,7 +72,7 @@ def test_example2_single_language_trust(run_cli):
 
 def test_example3_basket_many_languages_and_report(run_cli):
     code, out, err = run_cli(
-        "analyze", "--basket", "Learning English", "Q1860", "en:English as a second or foreign language",
+        "analyze", "--basket", "Q1860", "en:English as a second or foreign language", "name=Learning English",
         "--langs", "de,pl,uk,es,tr,fr", "--lang", "uk")
     assert code == 0, err
     res, folder = _results(out)
@@ -117,7 +117,7 @@ def test_new_article_is_not_reported_as_growth(run_cli):
 
 
 def test_rank_reweighting_without_refetch(run_cli):
-    code, out, _ = run_cli("analyze", "--basket", "English", "Q1860", "--langs", "en,uk,tr")
+    code, out, _ = run_cli("analyze", "--basket", "Q1860", "name=English", "--langs", "en,uk,tr")
     res, folder = _results(out)
     assert res["ranking"]["rows"][0]["cell"] != "t1:en"  # en is big but shrinking
     n_before = len(Handler.requests_log)
@@ -196,7 +196,7 @@ def test_offline_mode_uses_cache_only(run_cli, monkeypatch):
 
 
 def test_pdf_stays_one_page_under_pressure(run_cli):
-    code, out, _ = run_cli("analyze", "--basket", "English", "Q1860", "Q900002",
+    code, out, _ = run_cli("analyze", "--basket", "Q1860", "Q900002",
                            "--langs", "en,de,pl,uk,es,tr,fr,cs")
     res, folder = _results(out)
     long_text = " ".join(["This is a long executive summary sentence about the audiences."] * 40)
@@ -215,3 +215,15 @@ def test_request_budget_trims_redirects(run_cli):
     assert any("request budget" in w for w in res["warnings"])
     assert all(a["redirects"] == 0 for c in res["cells"] for a in c["articles"])
     assert any(f["code"] == "redirects_truncated" for c in res["cells"] for f in c["flags"])
+
+
+def test_basket_without_name_keeps_every_item(run_cli):
+    # regression: the first argument used to be taken as the name, silently dropping an article
+    code, out, _ = run_cli("analyze", "--basket", "English language", "English as a second or foreign language",
+                           "--langs", "uk,pl", "--no-charts")
+    assert code == 0
+    res, _ = _results(out)
+    topic = res["resolution"]["topics"][0]
+    assert [i["qid"] for i in topic["items"]] == ["Q1860", "Q900002"]
+    assert topic["label"] == "English +1"
+    assert len(res["cells"][0]["articles"]) == 2

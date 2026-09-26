@@ -137,7 +137,8 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
             lines.append(f"  {k}: {v}")
     lines.append("Answer checklist: 1) verdict 2) 2-5 numbers copied from Findings 3) confidence + main reason "
                  "(and ties/ambiguity if shown) 4) one validation step + 'pageviews show curiosity, not willingness "
-                 "to pay' 5) file paths. No causes that are not in the data.")
+                 "to pay' 5) file paths. Do not add causes or market claims (competition, saturation, economy) that are not "
+                 "in the data.")
     return "\n".join(lines)
 
 

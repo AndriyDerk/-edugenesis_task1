@@ -202,8 +202,16 @@ def cmd_report(args: argparse.Namespace) -> int:
     results, path = _load(args.results)
     summary = _read_text_arg(args.summary, args.summary_file)
     recommendation = _read_text_arg(args.recommendation, args.recommendation_file)
-    from .report import check_claims
-    problems = check_claims("\n".join(x for x in (summary, recommendation, args.title, args.question) if x), results)
+    from .report import check_attribution, check_claims
+    text = "\n".join(x for x in (summary, recommendation, args.title, args.question) if x)
+    problems = check_claims(text, results)
+    misattributed = check_attribution(text, results)
+    for p in misattributed:
+        print(f"ATTRIBUTION CHECK: '{p['claim']}' is written next to {p['said_for']} but is the figure of "
+              f"{p['belongs_to']}")
+    if misattributed and args.strict:
+        print("Fix the text and run again. No PDF written (--strict).")
+        return EXIT_INPUT
     if problems:
         print("NUMBER CHECK: these figures in your text do not match the analysis:")
         for p in problems:
@@ -339,9 +347,10 @@ def _add_topic_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--topic", action="append", metavar="TOPIC",
                    help="topic as free text ('intermittent fasting'), a Wikidata id (Q11002) or an article "
                         "('en:Astronomy', 'uk:Астрономія'). Repeat to compare topics.")
-    p.add_argument("--basket", action="append", nargs="+", metavar="NAME_THEN_ITEMS",
-                   help="a topic made of several articles: --basket \"Learning English\" en:English_language "
-                        "en:TOEFL Q1860 . Repeatable.")
+    p.add_argument("--basket", action="append", nargs="+", metavar="ITEM",
+                   help="one topic made of several articles (all arguments are articles; optional "
+                        "name=\"...\" labels it): --basket \"English language\" \"English as a second or foreign "
+                        "language\" name=\"Learning English\". Items: free text, Q-ids or lang:Title. Repeatable.")
     p.add_argument("--langs", required=True, help="Wikipedia language codes, comma separated: pl,cs,uk")
     p.add_argument("--search-lang", default="en", help="wiki used to search free-text topics (default en)")
     p.add_argument("--max-redirects", type=int, default=10,

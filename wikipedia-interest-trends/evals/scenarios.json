@@ -59,8 +59,13 @@
         },
         {
           "type": "answer_regex",
-          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "pattern": "(цікав|любозн|допитл|інтерес|curiosity|curious|interest)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|допитл|curiosity)",
           "why": "mandatory caveat",
+          "turn": 1
+        },
+        {
+          "type": "numbers_attributed",
+          "why": "each number belongs to the language it is written next to",
           "turn": 1
         },
         {
@@ -106,7 +111,7 @@
         },
         {
           "type": "answer_regex",
-          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "pattern": "(цікав|любозн|допитл|інтерес|curiosity|curious|interest)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|допитл|curiosity)",
           "why": "mandatory caveat"
         },
         {
@@ -174,13 +179,18 @@
         },
         {
           "type": "answer_regex",
-          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "pattern": "(цікав|любозн|допитл|інтерес|curiosity|curious|interest)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|допитл|curiosity)",
           "why": "mandatory caveat",
           "turn": 1
         },
         {
           "type": "hedged_causes",
           "why": "no invented market explanations",
+          "turn": 1
+        },
+        {
+          "type": "numbers_attributed",
+          "why": "each number belongs to the language it is written next to",
           "turn": 1
         },
         {
@@ -212,12 +222,16 @@
         },
         {
           "type": "answer_regex",
-          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "pattern": "(цікав|любозн|допитл|інтерес|curiosity|curious|interest)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|допитл|curiosity)",
           "why": "mandatory caveat"
         },
         {
           "type": "hedged_causes",
           "why": "no invented market explanations"
+        },
+        {
+          "type": "numbers_attributed",
+          "why": "each number belongs to the language it is written next to"
         },
         {
           "type": "max_tool_calls",

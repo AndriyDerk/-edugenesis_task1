@@ -106,6 +106,95 @@ def check_claims(text: str, results: dict[str, Any]) -> list[dict[str, Any]]:
     return problems
 
 
+# ------------------------------------------------------------ attribution check
+VIEWS_RE = re.compile(r"(?<![\w.,])(\d{1,3}(?:[.,]\d)?)\s?(k\b|тис\.?|тисяч\w*|thousand)|"
+                      r"(?<![\w.,])(\d{1,3}[ \u202f,]\d{3})(?![\d%])", re.IGNORECASE)
+
+
+def _cell_values(cell: dict[str, Any]) -> list[float]:
+    mt = cell["metrics"]
+    out: list[float] = []
+    for key in ("yoy", "yoy_raw", "yoy_normalized"):
+        block = mt.get(key) or {}
+        for v in [block.get("value")] + list(block.get("ci") or []):
+            if v is not None:
+                out.append(v * 100)
+    for v in (mt.get("last3_yoy"), mt.get("cagr"), (mt.get("trend") or {}).get("sen_annual_growth")):
+        if v is not None:
+            out.append(v * 100)
+    return out
+
+
+COUNTRY_STEMS = {  # a sentence naming a country talks about that market too: do not judge it
+    "uk": ["Україн", "Ukrain"], "pl": ["Польщ", "Poland", "Polish"], "cs": ["Чехі", "Czech"],
+    "sk": ["Словаччин", "Slovak"], "de": ["Німеччин", "Австрі", "German", "Austria"],
+    "fr": ["Франці", "France", "French"], "es": ["Іспані", "Мексик", "Spain", "Mexic"],
+    "pt": ["Португалі", "Бразилі", "Portug", "Brazil"], "tr": ["Туреччин", "Turkey", "Türkiye"],
+    "it": ["Італі", "Ital"], "ru": ["Росі", "Russia"], "en": ["США", "Британі", "USA", "Britain"],
+}
+
+
+def _lang_stems(code: str) -> list[str]:
+    stems = []
+    for ui in ("en", "uk"):
+        name = langs.name(code, ui)
+        if name and name != code:
+            stem = name.split(" (")[0]
+            stems.append(stem[:-2] if ui == "uk" and len(stem) > 5 else stem)  # українська -> українськ(а/ої)
+    return stems
+
+
+def check_attribution(text: str, results: dict[str, Any]) -> list[dict[str, Any]]:
+    """Numbers stated for one language that actually belong to another one
+    (e.g. 'Portuguese: 98k views/month' when 98k is Spanish).
+
+    Conservative on purpose: a line/sentence is judged only when it *starts*
+    with a language name (a bullet like '- Polish (pl): +2.7%...') and mentions
+    no other language or country anywhere."""
+    cells = [c for c in results.get("cells", []) if not c.get("error") and c.get("metrics")]
+    if len({c["lang"] for c in cells}) < 2 or len({c["topic_id"] for c in cells}) > 1:
+        return []
+    info = []
+    for c in cells:
+        names = _lang_stems(c["lang"])
+        subject = re.compile("|".join([rf"\({re.escape(c['lang'])}\)"] + [rf"\b{re.escape(n)}" for n in names]),
+                             re.IGNORECASE)
+        any_ref = re.compile("|".join([subject.pattern] + [re.escape(x) for x in COUNTRY_STEMS.get(c["lang"], [])]),
+                             re.IGNORECASE)
+        info.append((c, subject, any_ref, _cell_values(c), c["metrics"]["avg_monthly_last12"]))
+    problems = []
+    for sentence in re.split(r"\n+|(?<=[.;!?])\s+", text or ""):
+        head = re.sub(r"^[\s>*#\-•\d.)|]+", "", sentence)[:20]
+        subjects = [x for x in info if x[1].search(head)]
+        if len(subjects) != 1:
+            continue
+        cell, _, _, own_pct, own_views = subjects[0]
+        if any(x[2].search(sentence) for x in info if x[0] is not cell):
+            continue
+        others = [x for x in info if x[0] is not cell]
+        for m in PCT_RE.finditer(sentence):
+            if m.group(2).strip() != "%":
+                continue
+            v = _num(m.group(1))
+            if is_ci_level(v, sentence, m.start(), m.end()):
+                continue
+            if any(abs(abs(v) - abs(k)) <= max(1.05, 0.03 * abs(k)) for k in own_pct):
+                continue
+            owner = next((o for o in others if any(abs(abs(v) - abs(k)) <= 0.15 for k in o[3])), None)
+            if owner:
+                problems.append({"claim": m.group(0).strip(), "said_for": cell["label"],
+                                 "belongs_to": owner[0]["label"]})
+        for m in VIEWS_RE.finditer(sentence):
+            v = _num(m.group(1)) * 1000 if m.group(1) else float(re.sub(r"[ \u202f,]", "", m.group(3)))
+            if abs(v - own_views) <= max(0.08 * own_views, 600):
+                continue
+            owner = next((o for o in others if abs(v - o[4]) <= max(0.08 * o[4], 600)), None)
+            if owner:
+                problems.append({"claim": m.group(0).strip(), "said_for": cell["label"],
+                                 "belongs_to": owner[0]["label"]})
+    return problems
+
+
 # ----------------------------------------------------------------------- PDF
 def _font_paths() -> dict[str, str]:
     import matplotlib

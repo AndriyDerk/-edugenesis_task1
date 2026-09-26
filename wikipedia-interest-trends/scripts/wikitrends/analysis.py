@@ -459,8 +459,10 @@ def rank_cells(cells: list[dict[str, Any]], weights: dict[str, float] | None = N
     rows = []
     for pos, i in enumerate(order, start=1):
         c = ok[i]
-        strengths = [names[k] for k, (lo, hi) in bounds.items() if comps[i][k] is not None and scaled[k][i] >= hi]
-        weaknesses = [names[k] for k, (lo, hi) in bounds.items() if comps[i][k] is not None and scaled[k][i] <= lo]
+        strong = [k for k, (lo, hi) in bounds.items() if comps[i][k] is not None and scaled[k][i] >= hi]
+        weak = [k for k, (lo, hi) in bounds.items() if comps[i][k] is not None and scaled[k][i] <= lo]
+        strengths = [names[k] for k in strong]
+        weaknesses = [names[k] for k in weak]
         rows.append({
             "rank": pos,
             "cell": c["id"],
@@ -476,6 +478,8 @@ def rank_cells(cells: list[dict[str, Any]], weights: dict[str, float] | None = N
             },
             "strengths": strengths,
             "weaknesses": weaknesses,
+            "strong": strong,
+            "weak": weak,
         })
     for a, b in zip(rows, rows[1:]):
         a["gap_to_next"] = round(a["score"] - b["score"], 1)

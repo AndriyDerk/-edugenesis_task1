@@ -149,9 +149,14 @@ def run_check(check: dict[str, Any], tr: dict[str, Any]) -> tuple[bool, str]:
         m = re.search(check["pattern"], _answer(tr, turn), re.IGNORECASE | re.DOTALL)
         return m is None, ("ok" if m is None else f"forbidden text: {m.group(0)[:80]}")
     if kind == "answer_language":
-        share = _cyrillic_share(_answer(tr, turn))
-        ok = share > 0.5 if check["lang"] == "uk" else share < 0.2
-        return ok, f"cyrillic share {share:.2f}"
+        text = _answer(tr, turn)
+        share = _cyrillic_share(text)
+        if check["lang"] == "uk":
+            # letters that exist in Russian but not in Ukrainian: catches drifting into Russian
+            russian = len(re.findall(r"[ыэъё]|\b(что|это|как|какие|почему|который|которые|также|если|"
+                                     r"следующ\w*|исследова\w*|нужно|сейчас)\b", text, re.IGNORECASE))
+            return share > 0.5 and russian <= 2, f"cyrillic share {share:.2f}, non-Ukrainian letters {russian}"
+        return share < 0.2, f"cyrillic share {share:.2f}"
     if kind == "numbers_verified":
         ans = _answer(tr, turn)
         prompt = " ".join(t["user"] for t in tr["turns"])
@@ -163,11 +168,27 @@ def run_check(check: dict[str, Any], tr: dict[str, Any]) -> tuple[bool, str]:
         causes = re.compile(r"конкурент|насичен|економі|міграц|емігр|культур|менталіт|competit|saturat|econom|"
                             r"migrat|cultur|because of", re.IGNORECASE)
         hedge = re.compile(r"може|можлив|гіпотез|припущ|перевір|імовірн|ймовірн|might|may |possib|hypothes|"
-                           r"check|perhaps|likely", re.IGNORECASE)
+                           r"check|perhaps|likely|"
+                           # recommending to *study* competitors is a next step, not a causal claim
+                           r"оцін|дослід|проаналіз|вивч|evaluate|analy[sz]|research|"
+                           # 'competing markets' = the alternatives being compared
+                           r"конкурентн\w* ринк|competing (markets|options)", re.IGNORECASE)
         text = _answer(tr, turn)
         bad = [s_.strip()[:90] for s_ in re.split(r"(?<=[.!?])\s+|\n", text)
                if causes.search(s_) and not hedge.search(s_)]
         return not bad, ("ok" if not bad else f"unhedged cause: {bad[0]}")
+    if kind == "numbers_attributed":
+        from wikitrends.report import check_attribution
+        text = _answer(tr, turn)
+        bad = []
+        for f in _results_files(tr["workspace"], tr):
+            try:
+                res = json.loads(f.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            bad += [f"{p['claim']} said for {p['said_for']}, belongs to {p['belongs_to']}"
+                    for p in check_attribution(text, res)]
+        return not bad, ("ok" if not bad else "; ".join(dict.fromkeys(bad))[:200])
     if kind == "max_tool_calls":
         n = sum(len(t["tool_calls"]) for t in tr["turns"])
         return n <= check["n"], f"{n} tool calls (limit {check['n']})"

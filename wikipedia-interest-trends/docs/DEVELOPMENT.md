@@ -75,14 +75,23 @@ strength of looking plausible; every layer has an independent check:
 | eval (Haiku) | Ambiguous "Mercury" silently analysed as the planet | `!! CHECK TOPIC` line at the top of the output. |
 | eval (Haiku) | "vs wiki +8.8 %" read as "Wikipedia fell 8.8 %" | Whole-wiki YoY column + an explicit normalisation sentence. |
 | eval (Haiku) | Answers skipped the willingness-to-pay caveat or file paths | Mandatory answer skeleton in SKILL.md + a checklist at the end of the CLI output. |
+| eval (Haiku) | `--basket NAME ITEM...`: the model omitted the name, so its first *article* silently became the label and was not analysed | Every `--basket` argument is an article; optional `name=...`; regression test. |
+| eval (Haiku) | Translating English findings into Ukrainian produced wrong phrases ("the topic occupies +56 % of traffic") | Findings are printed in the report language (`--lang uk`), so the model copies them verbatim. |
+| eval (Haiku) | Recommendations padded with invented reasons ("less competitive / less saturated market") | Data-derived "Why, from the data" line per option; explicit examples in the rule; `hedged_causes` grader. |
+| eval (Haiku) | Languages without an article recommended *because* they could not be measured | SKILL.md: unmeasurable is neither zero interest nor a reason to recommend. |
+| eval (Haiku) | A heading drifted into Russian inside a Ukrainian answer | `answer_language` grader counts Russian-only letters and words. |
+| eval (Haiku) | `rank` follow-up did not show near-ties (uk 76.1 vs es 74.1) | Tie groups anchored on their best member, shown by `analyze` and `rank`. |
 | grader review | "ambig" matched inside a *file path*; "90% CI" counted as a claim | Paths stripped before text checks; CI-level detection on both sides of the number. |
 
 ## Eval results (Claude Haiku 4.5, fake world)
 
 The development sandbox could not reach Wikimedia or OpenRouter, so the full scenario was run
 with **Claude Haiku 4.5** as a Claude Code subagent (Bash + Read tools) against the fake
-Wikimedia server, graded with `evals/grade_workspace.py`. See `evals/results/haiku-4.5.md` for
-the per-round tables. The OpenRouter harness (`evals/agent_eval.py`) was validated end to end with a
+Wikimedia server, graded with `evals/grade_workspace.py`: 25 runs over 7 improvement rounds,
+including two-turn follow-ups. Summary: tool use and number fidelity were reliable in every run.
+The fixed questions have been clean since round 3. The open "which audiences next" question still
+occasionally gets an invented market reason or a number copied from another row; the CLI and the
+`report` guards catch the latter. Details: `evals/results/haiku-4.5.md`. The OpenRouter harness (`evals/agent_eval.py`) was validated end to end with a
 scripted model (`tests/test_eval_harness.py`); run it with a free key as described in `evals/README.md`.
 
 ## Running everything

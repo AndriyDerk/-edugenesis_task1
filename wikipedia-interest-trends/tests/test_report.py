@@ -73,3 +73,22 @@ def test_note_translation():
     en = ("no article titled 'foo' on en.wikipedia; picked top search result 'Foo bar' - check the alternatives")
     assert "обрано" in i18n.note(en, "uk")
     assert i18n.note(en, "en") == en
+
+
+def test_attribution_check_catches_numbers_from_another_row():
+    from wikitrends.report import check_attribution
+
+    def cell(lang, yoy, views):
+        return {"id": f"t1:{lang}", "topic_id": "t1", "lang": lang, "label": lang, "error": None,
+                "metrics": {"yoy": {"value": yoy, "ci": [yoy - 0.01, yoy + 0.01]}, "avg_monthly_last12": views,
+                            "trend": {}}}
+    res = {"cells": [cell("es", 0.006, 98000), cell("pt", 0.043, 77000), cell("uk", 0.183, 68000)]}
+    ok = "Іспанська: +0,6%, ≈98 тис. перегл./міс.\nПортугальська (pt): +4,3%, 77k views."
+    assert check_attribution(ok, res) == []
+    bad = "Португальська — найбільша аудиторія ~98 тис. переглядів.\nUkrainian: +4.3% growth"
+    found = {(p["claim"], p["said_for"], p["belongs_to"]) for p in check_attribution(bad, res)}
+    assert ("98 тис.", "pt", "es") in found and ("+4.3%", "uk", "pt") in found
+    # sentences naming two languages, or a country, are ambiguous and not judged
+    assert check_attribution("Іспанська (98 тис.) більша за португальську (77 тис.)", res) == []
+    assert check_attribution("Португальська: як і в Іспанії, 98 тис.", res) == []
+    assert check_attribution("Чому: друге місце (+4,3%), а читачі uk.wikipedia часто з Польщі", res) == []

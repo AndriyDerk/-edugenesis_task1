@@ -194,8 +194,9 @@ def resolve_topics(
                 wanted[lang].append(title)
         if not topic["label"]:
             first = topic["items"][0]
-            topic["label"] = _cap(first["label"])
-            topic["labels"] = {code: _cap(v) for code, v in first["labels"].items()}
+            more = f" +{len(topic['items']) - 1}" if len(topic["items"]) > 1 else ""
+            topic["label"] = _cap(first["label"]) + more
+            topic["labels"] = {code: _cap(v) + more for code, v in first["labels"].items()}
         else:
             topic["labels"] = {"en": topic["label"], "uk": topic["label"]}
 
@@ -259,12 +260,24 @@ def _cap(s: str) -> str:
 
 
 def parse_topics(topic_args: list[str] | None, basket_args: list[list[str]] | None) -> list[TopicSpec]:
-    """CLI helper: ``--topic X`` (one item) and ``--basket NAME ITEM [ITEM...]``."""
+    """CLI helper: ``--topic X`` (one item) and ``--basket ITEM [ITEM...]``.
+
+    Every basket argument is an article/topic; an optional ``name=...`` argument
+    names the basket. (A positional name proved error-prone: small models omit it
+    and their first article silently becomes the label.)"""
     specs: list[TopicSpec] = []
     for t in topic_args or []:
         specs.append(TopicSpec(label=None, items=[t]))
     for b in basket_args or []:
-        if len(b) < 2:
-            raise ResolveError("--basket needs a name and at least one item: --basket \"Name\" Q123 en:Title")
-        specs.append(TopicSpec(label=b[0], items=b[1:]))
+        label = None
+        items = []
+        for arg in b:
+            if arg.strip().lower().startswith("name="):
+                label = arg.split("=", 1)[1].strip() or None
+            else:
+                items.append(arg)
+        if not items:
+            raise ResolveError('--basket needs at least one article: --basket "English language" '
+                               '"English as a second or foreign language" name="Learning English"')
+        specs.append(TopicSpec(label=label, items=items))
     return specs

@@ -32,6 +32,7 @@ that shows whether a change helped.
 | Automated-traffic share | Stronger bot diagnostics | Fetch `agent=automated` for main titles; flag articles where it is large or rising. |
 | Reader-country weighting | Language != market | Use top-by-country ranks (and population data) to express reach per country. |
 | Diff between runs | Follow-ups like "what changed since last month?" | `compare <old> <new>` over two `results.json` files. |
+| `draft` command | Evals show small models still pad "which audience next" answers with invented market reasons | Generate the recommendation paragraph (order, ties, data-derived reasons, validation step) in the user's language; the agent only edits it. |
 
 ## Iteration 3: more complex research
 

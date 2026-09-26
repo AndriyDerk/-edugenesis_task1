@@ -25,7 +25,7 @@ once, then retry.
 |---|---|
 | Compare growth of a topic in languages A and B | `analyze --topic "Intermittent fasting" --langs pl,cs` |
 | Know if interest grows in one language + how reliable | `analyze --topic "Astronomy" --langs uk` |
-| Choose which audiences/languages to explore next | `analyze --basket "Learning English" "English language" "English as a second or foreign language" --langs de,pl,uk,es,tr,pt` |
+| Choose which audiences/languages to explore next | `analyze --basket "English language" "English as a second or foreign language" name="Learning English" --langs de,pl,uk,es,tr,pt` |
 | Choose between topics / courses in one language | `analyze --topic "Astronomy" --topic "Chemistry" --topic "Biology" --langs uk` |
 | A shareable report / PDF | add `--pdf` to analyze, **or** run `report` afterwards (Step 4) |
 | A longer or specific period | add `--months 36` or `--start 2023-01 --end 2025-12` |
@@ -38,9 +38,11 @@ Rules for the arguments:
 - **Topic**: give the English name (e.g. "Intermittent fasting"), a Wikidata id (`Q333` = astronomy) or an exact
   article (`uk:Астрономія`). The tool finds the same article in every language through Wikidata.
   **Never translate article titles yourself.**
-- **Basket** (`--basket NAME ITEM ITEM...`): use when the interest is spread over several articles.
-  Use 2-5 closely related articles about the same intent, e.g. learning English = "English language",
+- **Basket** (`--basket ITEM ITEM ... name="Label"`): use when the interest is spread over several
+  articles. Every argument is an article; `name=` (optional) only labels the basket. Use 2-5 closely
+  related articles about the same intent, e.g. learning English = "English language",
   "English as a second or foreign language", "IELTS", "TOEFL". Do not mix unrelated concepts.
+  Check the `Topic` line: items that were `nothing found` are listed under Warnings.
 - **Languages** are Wikipedia codes: `uk` Ukrainian, `pl` Polish, `cs` Czech, `de` German, `es` Spanish,
   `pt` Portuguese, `tr` Turkish, `fr` French, `it` Italian, `ro` Romanian, `ja` Japanese, `zh` Chinese.
   If the user asks "which audiences" without naming languages, choose 5-8 plausible candidates and say which.
@@ -58,7 +60,8 @@ Rules for the arguments:
   article is not what the user meant (see `other candidates`), re-run with the right `Q...` id.
   Use `resolve --topic X --langs ...` to preview mappings without downloading pageviews.
 - `Articles:` shows the article used per language. `NO ARTICLE` / `missing:` means the language
-  cannot be measured (fully or partly) for that topic. Say so; do not treat it as zero interest.
+  cannot be measured (fully or partly) for that topic. Say so. It is neither zero interest nor a
+  reason to recommend that language; suggest measuring it another way (search keyword volumes).
 
 ## Step 3: answer from the output
 
@@ -77,8 +80,9 @@ Write the answer in the user's language with exactly these parts, briefly:
 
 - Recommend options in the order of the tool's `Ranking`. If the user states other priorities,
   re-rank with `rank <folder> --weights ...` instead of reordering by hand.
-- Do not invent causes (economy, migration, culture, marketing...). The data shows *what* changed,
-  not *why*. If you mention a cause, label it as a hypothesis to check.
+- Do not invent causes or market facts: nothing about competition, "less saturated markets", economy,
+  migration or culture. Wikipedia data shows *what* changed, not *why*. If you mention a possible
+  cause, write it as a hypothesis to check ("possibly..., worth checking").
 
 How to read the key fields:
 
@@ -114,8 +118,9 @@ python3 <skill-dir>/scripts/wt.py report <result-folder> --lang uk \
 - step two"
 ```
 
-The command checks every percentage in your text against the analysis. If it prints
-`NUMBER CHECK`, fix those numbers (use the exact figures from the findings) and run it again.
+The command checks every percentage in your text against the analysis, and that each figure is
+written next to the right language. If it prints `NUMBER CHECK` or `ATTRIBUTION CHECK`, fix those
+numbers (use the exact figures from the findings) and run it again.
 The PDF (A4, always one page), `report.md` and PNG charts are written into the result folder.
 
 ## When something fails

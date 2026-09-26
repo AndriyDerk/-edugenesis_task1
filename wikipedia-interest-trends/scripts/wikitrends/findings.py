@@ -109,6 +109,15 @@ def findings(results: dict[str, Any], lang: str = "en", max_cells: int = 6) -> l
         for group in ranking.get("ties", [])[:2]:
             names = ", ".join(f"{name_of(results, by_id[c], lang)} ({scores[c]:.0f})" for c in group)
             out.append(i18n.text("tie", lang, names=names))
+        parts = []
+        for row in ranking["rows"][:6]:
+            good = ", ".join(i18n.COMPONENT[lang][k] for k in row.get("strong", []))
+            bad = ", ".join(i18n.COMPONENT[lang][k] for k in row.get("weak", []))
+            desc = "; ".join(x for x in (f"+ {good}" if good else "", f"− {bad}" if bad else "") if x)
+            if desc:
+                parts.append(f"{name_of(results, by_id[row['cell']], lang)}: {desc}")
+        if parts:
+            out.append(i18n.text("why", lang, parts=" | ".join(parts)))
     elif comps:
         out.append(comparison_line(comps.pop(0)))
 

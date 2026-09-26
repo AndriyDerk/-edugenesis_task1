@@ -235,6 +235,8 @@ TEXT = {
         "rank_unstable": "; the winner depends on priorities ({alts})",
         "tie": "Practically tied (scores within 3 points): {names}; choose between them by priority "
                "(size vs growth), not by rank.",
+        "why": "Why, from the data (+ strong, − weak, relative to the other options): {parts}. "
+               "Nothing in the data explains the causes.",
         "dimension": {"language": "language", "topic": "topic", "topic x language": "option"},
         "spike": "Largest spike: {date} in {name} (x{ratio} of normal, {kind}); excluded from the trend.",
         "accelerating": "accelerating", "slowing": "slowing",
@@ -260,6 +262,8 @@ TEXT = {
         "rank_unstable": "; переможець залежить від пріоритетів ({alts})",
         "tie": "Практично рівні (різниця балів менше 3): {names}; обирайте між ними за пріоритетом "
                "(розмір чи зростання), а не за місцем у рейтингу.",
+        "why": "Чому, за даними (+ сильне, − слабке порівняно з іншими варіантами): {parts}. "
+               "Причин змін дані не пояснюють.",
         "dimension": {"language": "мова", "topic": "тема", "topic x language": "тема × мова"},
         "spike": "Найбільший сплеск: {date}, {name} (×{ratio} від норми, {kind}); виключено з тренду.",
         "accelerating": "прискорюється", "slowing": "сповільнюється",
@@ -311,7 +315,7 @@ LABELS = {
     "en": {
         "key_findings": "Key findings", "summary": "Summary", "recommendation": "Recommendation & next steps",
         "limitations": "Method & limitations", "table_lang": "Option", "table_avg": "Views / month",
-        "table_yoy": "YoY w/o spikes (90% CI)", "table_norm": "vs wiki", "table_dir": "Trend",
+        "table_yoy": "YoY w/o spikes (90% CI)", "table_norm": "vs whole wiki", "table_dir": "Trend",
         "table_conf": "Confidence", "table_score": "Score", "generated": "Generated", "period": "Period",
         "source": "Data: Wikimedia Pageviews API", "human": "human views",
         "chart_trend_idx": "Monthly views, index (first 12 months = 100), spikes removed",
@@ -330,7 +334,7 @@ LABELS = {
     "uk": {
         "key_findings": "Ключові висновки", "summary": "Підсумок", "recommendation": "Рекомендація та наступні кроки",
         "limitations": "Метод і обмеження", "table_lang": "Варіант", "table_avg": "Перегл./міс.",
-        "table_yoy": "Р/р без сплесків (90% ДІ)", "table_norm": "відн. вікі", "table_dir": "Тренд",
+        "table_yoy": "Р/р без сплесків (90% ДІ)", "table_norm": "відн. всієї вікі", "table_dir": "Тренд",
         "table_conf": "Довіра", "table_score": "Бал", "generated": "Згенеровано", "period": "Період",
         "source": "Дані: Wikimedia Pageviews API", "human": "людські перегляди",
         "chart_trend_idx": "Перегляди за місяць, індекс (перші 12 міс. = 100), без сплесків",

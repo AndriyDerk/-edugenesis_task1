@@ -102,9 +102,9 @@ def trend_chart(results: dict[str, Any], path: Path, lang: str) -> Path | None:
     ax.set_xticks(ticks)
     ax.set_xticklabels(labels)
     ax.set_xlim(-0.5, n - 0.5)
-    ax.legend(loc="upper left", bbox_to_anchor=(0.0, 0.92), ncol=min(4, len(cells) + (1 if single else 0)))
+    ax.legend(loc="upper left", bbox_to_anchor=(0.0, -0.13), ncol=min(5, len(cells) + (1 if single else 0)))
     fig.tight_layout()
-    fig.savefig(path)
+    fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     return path
 
@@ -119,7 +119,7 @@ def growth_chart(results: dict[str, Any], path: Path, lang: str) -> Path | None:
     los = [c["metrics"]["yoy"]["ci"][0] for c in cells]
     his = [c["metrics"]["yoy"]["ci"][1] for c in cells]
     norms = [(c["metrics"].get("yoy_normalized") or {}).get("value") for c in cells]
-    height = max(1.6, 0.42 * len(cells) + 0.9)
+    height = max(2.2, 0.42 * len(cells) + 1.5)
     fig, ax = plt.subplots(figsize=(4.3, height))
     y = list(range(len(cells)))[::-1]
     colors = [GRADE_COLORS[c["confidence"]["grade"]] for c in cells]
@@ -144,10 +144,13 @@ def growth_chart(results: dict[str, Any], path: Path, lang: str) -> Path | None:
     ax.xaxis.set_major_formatter(_pct_formatter(lang))
     ax.grid(axis="y", visible=False)
     ax.set_title(textwrap.fill(i18n.label("chart_growth", lang), 42), loc="left")
-    ax.legend(handles=handles, loc="best", fontsize=6.5)
-    fig.text(0.01, 0.01, textwrap.fill(i18n.label("color_conf", lang), 80), fontsize=6, color="#64748b",
-             va="bottom")
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    # fixed space in inches under the axes for the legend and the colour note
+    reserve = 0.62
+    fig.tight_layout(rect=(0, reserve / height, 1, 1))
+    fig.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.01, 0.24 / height), fontsize=6.5, ncol=2,
+               frameon=False)
+    fig.text(0.015, 0.04 / height, textwrap.fill(i18n.label("color_conf", lang), 80), fontsize=6,
+             color="#64748b", va="bottom")
     fig.savefig(path)
     plt.close(fig)
     return path
@@ -211,7 +214,7 @@ def opportunity_chart(results: dict[str, Any], path: Path, lang: str) -> Path | 
     ax.set_ylim(min(ys) - pad, max(ys) + pad)
     ax.set_xlim(lo_x, hi_x)
     fig.tight_layout()
-    fig.savefig(path)
+    fig.savefig(path, bbox_inches="tight", pad_inches=0.05)
     plt.close(fig)
     return path
 
