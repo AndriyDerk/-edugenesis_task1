@@ -222,13 +222,16 @@ TEXT = {
         "headline_new": "{name} — new article (first views {date}): year-over-year growth is not meaningful yet; "
                         "≈{avg} views/month recently; confidence {grade}.",
         "up": "higher", "down": "lower",
-        "normalized": "Relative to all traffic of {wiki} ({project} YoY), interest in {name} changed {norm}.",
+        "normalized": "The whole {wiki} changed {project} YoY; relative to it (share of all its views), "
+                      "interest in {name} changed {norm}.",
         "compare": "{a} vs {b}: growth differs by {diff} pp (90% CI {lo}…{hi}) → {verdict}.",
         "faster": "{x} grew faster", "no_difference": "no clear difference",
         "not_comparable": "not comparable",
         "ranking": "Most promising {dimension}: {label} (score {score}/100){stability}.",
         "rank_stable": "; it wins under all {n} weighting schemes",
         "rank_unstable": "; the winner depends on priorities ({alts})",
+        "tie": "Practically tied (scores within 3 points): {names}; choose between them by priority "
+               "(size vs growth), not by rank.",
         "dimension": {"language": "language", "topic": "topic", "topic x language": "option"},
         "spike": "Largest spike: {date} in {name} (x{ratio} of normal, {kind}); excluded from the trend.",
         "accelerating": "accelerating", "slowing": "slowing",
@@ -244,13 +247,16 @@ TEXT = {
         "headline_new": "{name} — нова стаття (перші перегляди {date}): порівняння рік до року ще неможливе; "
                         "≈{avg} перегл./міс. останнім часом; довіра {grade}.",
         "up": "вище", "down": "нижче",
-        "normalized": "Відносно всього трафіку {wiki} ({project} р/р) інтерес до «{name}» змінився на {norm}.",
+        "normalized": "Уся {wiki} змінилась на {project} р/р; відносно неї (частка в усіх її переглядах) "
+                      "інтерес до «{name}» змінився на {norm}.",
         "compare": "{a} проти {b}: різниця зростання {diff} п.п. (90% ДІ {lo}…{hi}) → {verdict}.",
         "faster": "{x} зростає швидше", "no_difference": "чіткої різниці немає",
         "not_comparable": "непорівнювано",
         "ranking": "Найперспективніший варіант ({dimension}): {label} (бал {score}/100){stability}.",
         "rank_stable": "; перемагає за всіх {n} схем ваг",
         "rank_unstable": "; переможець залежить від пріоритетів ({alts})",
+        "tie": "Практично рівні (різниця балів менше 3): {names}; обирайте між ними за пріоритетом "
+               "(розмір чи зростання), а не за місцем у рейтингу.",
         "dimension": {"language": "мова", "topic": "тема", "topic x language": "тема × мова"},
         "spike": "Найбільший сплеск: {date}, {name} (×{ratio} від норми, {kind}); виключено з тренду.",
         "accelerating": "прискорюється", "slowing": "сповільнюється",

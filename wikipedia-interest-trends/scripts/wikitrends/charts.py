@@ -164,6 +164,7 @@ def opportunity_chart(results: dict[str, Any], path: Path, lang: str) -> Path | 
     by_id = {c["id"]: c for c in results["cells"]}
     fig, ax = plt.subplots(figsize=(3.1, 2.7))
     xs, ys = [], []
+    placed: list[tuple[float, float]] = []
     for row in ranking["rows"][:12]:
         c = by_id[row["cell"]]
         if not growth_valid(c):
@@ -178,14 +179,29 @@ def opportunity_chart(results: dict[str, Any], path: Path, lang: str) -> Path | 
         size = 30 + 120 * min(1.0, math.sqrt(pm) / 10.0)
         ax.scatter([xv], [yv], s=size, color=GRADE_COLORS[c["confidence"]["grade"]], alpha=0.75,
                    edgecolor="#0f172a", linewidth=0.5, zorder=3)
+        # nudge labels that would overlap an earlier one (positions in log-x / linear-y space)
+        pos = (math.log10(xv), yv)
+        dy = 4
+        for px, py in placed:
+            if abs(px - pos[0]) < 0.25 and abs(py - pos[1]) < 0.04:
+                dy -= 9
+        placed.append(pos)
         ax.annotate(f"{row['rank']}. {c['label'] if c['label'] == c['lang'] else name_of(results, c, lang)[:18]}",
-                    (xv, yv), textcoords="offset points", xytext=(5, 4), fontsize=6.5)
+                    (xv, yv), textcoords="offset points", xytext=(5, dy), fontsize=6.5)
         xs.append(xv)
         ys.append(yv)
     if not xs:
         plt.close(fig)
         return None
     ax.set_xscale("log")
+    from matplotlib.ticker import FixedLocator, FuncFormatter, NullFormatter
+    lo_x, hi_x = min(xs) / 2.2, max(xs) * 3.5
+    nice = [m * 10 ** e for e in range(0, 9) for m in (1, 2, 5) if lo_x <= m * 10 ** e <= hi_x]
+    if len(nice) > 5:
+        nice = [v for v in nice if str(int(v))[0] in "1"] or nice[::2]
+    ax.xaxis.set_major_locator(FixedLocator(nice))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: i18n.fmt_compact(v, lang)))
+    ax.xaxis.set_minor_formatter(NullFormatter())
     ax.axhline(0, color="#334155", lw=0.8)
     ax.yaxis.set_major_formatter(_pct_formatter(lang))
     ax.set_xlabel(i18n.label("opp_x", lang), fontsize=7)
@@ -193,7 +209,7 @@ def opportunity_chart(results: dict[str, Any], path: Path, lang: str) -> Path | 
     ax.set_title(i18n.label("chart_opp", lang), loc="left")
     pad = (max(ys) - min(ys)) * 0.25 + 0.05
     ax.set_ylim(min(ys) - pad, max(ys) + pad)
-    ax.set_xlim(min(xs) / 2.2, max(xs) * 3.5)
+    ax.set_xlim(lo_x, hi_x)
     fig.tight_layout()
     fig.savefig(path)
     plt.close(fig)

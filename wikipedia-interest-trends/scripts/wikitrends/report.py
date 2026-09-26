@@ -15,7 +15,13 @@ from .findings import caveats, findings, name_of, ordered_cells
 # ----------------------------------------------------------------- claim check
 _NUM = r"[+\-−–]?\s?\d{1,4}(?:[.,]\d+)?"
 PCT_RE = re.compile(rf"(?<![\w.,])({_NUM})\s?(%|\s?pp\b|\s?п\.\s?п\.|\s?в\.\s?п\.)", re.IGNORECASE)
-CI_WORDS = re.compile(r"^\W{0,3}(ci|ді|conf|довір|інтерв|bootstrap|бутстреп)", re.IGNORECASE)
+CI_WORDS = re.compile(r"\b(ci|ді|conf\w*|uncertaint\w*|interval\w*|довір\w*|інтервал\w*|невизначен\w*|"
+                      r"bootstrap|бутстреп\w*)", re.IGNORECASE)
+
+
+def is_ci_level(value: float, text: str, start: int, end: int) -> bool:
+    """'90% CI', 'довірчий інтервал 90%' etc. name the interval level, not a result."""
+    return abs(value) in (80.0, 90.0, 95.0, 99.0) and bool(CI_WORDS.search(text[max(0, start - 30):end + 25]))
 
 
 def _num(s: str) -> float:
@@ -82,8 +88,7 @@ def check_claims(text: str, results: dict[str, Any]) -> list[dict[str, Any]]:
             v = _num(raw)
         except ValueError:
             continue
-        after = text[m.end():m.end() + 16]
-        if abs(v) in (90.0, 95.0, 99.0) and CI_WORDS.search(after):
+        if is_ci_level(v, text, m.start(), m.end()):
             continue
         is_pp = m.group(2).strip().lower() != "%"
         best = None

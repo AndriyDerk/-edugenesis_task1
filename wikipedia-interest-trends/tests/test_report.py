@@ -29,6 +29,13 @@ def test_claims_that_match_pass():
     assert check_claims(text, results_stub()) == []
 
 
+def test_ci_level_mentions_are_not_claims():
+    for text in ("довірчий інтервал 90% +22,0…+49,1%", "The 90% uncertainty interval is tight",
+                 "90% CI 22-49%", "з 95-відсотковим… 95% довірчим інтервалом"):
+        assert check_claims(text, results_stub()) == [], text
+    assert [p["claim"] for p in check_claims("sales grew 90%", results_stub())] == ["90%"]
+
+
 def test_fabricated_claims_are_flagged():
     problems = check_claims("Interest grew 80% and Czech by 19 pp.", results_stub())
     claims = {p["claim"] for p in problems}

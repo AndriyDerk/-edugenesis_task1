@@ -73,30 +73,27 @@ def headline(results: dict[str, Any], cell: dict[str, Any], lang: str) -> str:
 
 
 def findings(results: dict[str, Any], lang: str = "en", max_cells: int = 6) -> list[str]:
+    """Most decision-relevant sentences first (the PDF shows only the first few)."""
     lang = i18n.ui(lang)
     out: list[str] = []
     cells = ordered_cells(results)
     by_id = {c["id"]: c for c in cells}
     ok = [c for c in cells if growth_valid(c)]
+    ranking = results.get("ranking")
+    comps = list(results.get("comparisons", []))
 
-    for cell in cells[:max_cells]:
-        out.append(headline(results, cell, lang))
-    if len(cells) > max_cells:
-        out.append(f"(+{len(cells) - max_cells} more in the table)" if lang == "en"
-                   else f"(ще {len(cells) - max_cells} — у таблиці)")
-
-    for comp in results.get("comparisons", [])[:3]:
+    def comparison_line(comp: dict[str, Any]) -> str:
         a, b = by_id[comp["a"]], by_id[comp["b"]]
         if comp["verdict"] == "faster":
             verdict = i18n.text("faster", lang, x=name_of(results, by_id[comp["winner"]], lang))
         else:
             verdict = i18n.text(comp["verdict"], lang)
-        out.append(i18n.text("compare", lang, a=name_of(results, a, lang), b=name_of(results, b, lang),
-                             diff=i18n.fmt_pp(comp["diff_pp"], lang), lo=i18n.fmt_pp(comp["ci_pp"][0], lang),
-                             hi=i18n.fmt_pp(comp["ci_pp"][1], lang), verdict=verdict))
+        return i18n.text("compare", lang, a=name_of(results, a, lang), b=name_of(results, b, lang),
+                         diff=i18n.fmt_pp(comp["diff_pp"], lang), lo=i18n.fmt_pp(comp["ci_pp"][0], lang),
+                         hi=i18n.fmt_pp(comp["ci_pp"][1], lang), verdict=verdict)
 
-    ranking = results.get("ranking")
-    if ranking:
+    # 1. the answer to "which one?": ranking (3+ options) or the head-to-head comparison (2 options)
+    if ranking and len(ranking["rows"]) >= 3:
         top = ranking["rows"][0]
         if ranking["top_stable"]:
             stability = i18n.text("rank_stable", lang, n=len(ranking["sensitivity"]))
@@ -108,7 +105,23 @@ def findings(results: dict[str, Any], lang: str = "en", max_cells: int = 6) -> l
         out.append(i18n.text("ranking", lang, dimension=i18n.TEXT[lang]["dimension"][ranking["dimension"]],
                              label=name_of(results, by_id[top["cell"]], lang), score=f"{top['score']:.0f}",
                              stability=stability))
+        scores = {r["cell"]: r["score"] for r in ranking["rows"]}
+        for group in ranking.get("ties", [])[:2]:
+            names = ", ".join(f"{name_of(results, by_id[c], lang)} ({scores[c]:.0f})" for c in group)
+            out.append(i18n.text("tie", lang, names=names))
+    elif comps:
+        out.append(comparison_line(comps.pop(0)))
 
+    # 2. one line per option
+    for cell in cells[:max_cells]:
+        out.append(headline(results, cell, lang))
+    if len(cells) > max_cells:
+        out.append(f"(+{len(cells) - max_cells} more in the table)" if lang == "en"
+                   else f"(ще {len(cells) - max_cells} — у таблиці)")
+
+    # 3. supporting detail
+    for comp in comps[: (2 if ranking else 3)]:
+        out.append(comparison_line(comp))
     shown = 0
     for cell in ok:
         mt = cell["metrics"]
@@ -116,7 +129,7 @@ def findings(results: dict[str, Any], lang: str = "en", max_cells: int = 6) -> l
         proj = mt.get("project_yoy")
         if norm.get("value") is None or proj is None:
             continue
-        if abs(proj) >= 0.03 and abs(norm["value"] - mt["yoy"]["value"]) >= 0.03:
+        if True:  # always state it: "vs wiki" alone is easy to misread
             out.append(i18n.text("normalized", lang, wiki=f"{cell['lang']}.wikipedia", project=i18n.fmt_pct(proj, lang),
                                  name=name_of(results, cell, lang), norm=i18n.fmt_pct(norm["value"], lang)))
             shown += 1

@@ -4,3 +4,6 @@ __pycache__/
 .venv/
 wikitrends-out/
 *.partial/
+
+# eval workspaces (transcripts/results summaries are copied to evals/results)
+wikipedia-interest-trends/evals/runs/

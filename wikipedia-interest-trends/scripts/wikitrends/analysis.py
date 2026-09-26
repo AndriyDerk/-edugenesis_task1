@@ -389,6 +389,9 @@ def _components(cell: dict[str, Any]) -> dict[str, float | None]:
     }
 
 
+TIE_POINTS = 3.0  # score gaps below this are within the noise of the inputs
+
+
 def _scaled(name: str, value: float | None) -> float:
     if value is None:
         return 0.5
@@ -445,11 +448,18 @@ def rank_cells(cells: list[dict[str, Any]], weights: dict[str, float] | None = N
 
     names = {"reach": "audience size", "momentum": "growth", "intensity": "topic salience in that wiki",
              "confidence": "data reliability"}
+    # strengths/weaknesses are relative to the other options (what makes this one different)
+    bounds = {}
+    for k in DEFAULT_WEIGHTS:
+        vals = [scaled[k][j] for j in range(len(ok)) if comps[j][k] is not None]
+        if len(vals) >= 2 and max(vals) - min(vals) >= 0.15:
+            spread = max(vals) - min(vals)
+            bounds[k] = (min(vals) + 0.25 * spread, max(vals) - 0.25 * spread)
     rows = []
     for pos, i in enumerate(order, start=1):
         c = ok[i]
-        strengths = [names[k] for k in DEFAULT_WEIGHTS if scaled[k][i] >= 0.67 and comps[i][k] is not None]
-        weaknesses = [names[k] for k in DEFAULT_WEIGHTS if scaled[k][i] <= 0.33 and comps[i][k] is not None]
+        strengths = [names[k] for k, (lo, hi) in bounds.items() if comps[i][k] is not None and scaled[k][i] >= hi]
+        weaknesses = [names[k] for k, (lo, hi) in bounds.items() if comps[i][k] is not None and scaled[k][i] <= lo]
         rows.append({
             "rank": pos,
             "cell": c["id"],
@@ -466,11 +476,23 @@ def rank_cells(cells: list[dict[str, Any]], weights: dict[str, float] | None = N
             "strengths": strengths,
             "weaknesses": weaknesses,
         })
+    for a, b in zip(rows, rows[1:]):
+        a["gap_to_next"] = round(a["score"] - b["score"], 1)
+    ties = []
+    group: list[str] = []
+    for row in rows[:6]:
+        group.append(row["cell"])
+        if row.get("gap_to_next") is None or row["gap_to_next"] >= TIE_POINTS:
+            # only ties that matter for the decision: involving one of the top 3 places
+            if len(group) > 1 and rows[[r["cell"] for r in rows].index(group[0])]["rank"] <= 3:
+                ties.append(group)
+            group = []
     return {
         "dimension": dimension,
         "weights": primary,
         "custom_weights": weights is not None,
         "rows": rows,
+        "ties": ties,
         "sensitivity": sensitivity,
         "top_stable": agree == len(WEIGHT_PRESETS),
         "top_agreement": f"{agree}/{len(WEIGHT_PRESETS)}",

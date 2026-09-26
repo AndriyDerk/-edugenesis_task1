@@ -53,7 +53,7 @@ def _deps_importable() -> bool:
 def _install(target: Path) -> bool:
     print(f"[wikitrends] one-time setup: installing pinned matplotlib + reportlab into {target} "
           "(~30-60 s)...", file=sys.stderr, flush=True)
-    tmp = target.with_name(target.name + ".partial")
+    tmp = target.with_name(f"{target.name}.partial-{os.getpid()}")
     shutil.rmtree(tmp, ignore_errors=True)
     tmp.parent.mkdir(parents=True, exist_ok=True)
     uv = shutil.which("uv")
@@ -66,9 +66,13 @@ def _install(target: Path) -> bool:
     for cmd in commands:
         try:
             subprocess.run(cmd, check=True, stdout=sys.stderr)
-            shutil.rmtree(target, ignore_errors=True)
-            tmp.rename(target)
-            (target / ".wikitrends-ready").write_text("ok", encoding="utf-8")
+            (tmp / ".wikitrends-ready").write_text("ok", encoding="utf-8")
+            try:
+                tmp.rename(target)  # atomic; loses harmlessly if a parallel run finished first
+            except OSError:
+                shutil.rmtree(tmp, ignore_errors=True)
+                if not (target / ".wikitrends-ready").exists():
+                    raise
             print("[wikitrends] dependencies ready", file=sys.stderr, flush=True)
             return True
         except (subprocess.CalledProcessError, OSError) as exc:

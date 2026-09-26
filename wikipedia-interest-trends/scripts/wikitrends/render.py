@@ -38,6 +38,10 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
     w = results["window"]
     p = results["params"]
     lines.append("== wikitrends analysis ==")
+    for w_ in results["resolution"].get("warnings", []):
+        if "ambiguous" in w_ or "picked top search result" in w_:
+            lines.append(f"!! CHECK TOPIC: {w_}. Tell the user which meaning was analysed, or re-run with a Q-id "
+                         "from the candidates below.")
     for t in results["resolution"]["topics"]:
         items = []
         for it in t["items"]:
@@ -56,8 +60,9 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
         lines.append(_articles_line(cell))
 
     lines.append("")
-    lines.append("| option | views/mo | YoY w/o spikes [90% CI] | months up | vs wiki | trend | confidence |")
-    lines.append("|---|---|---|---|---|---|---|")
+    lines.append("| option | views/mo | topic YoY w/o spikes [90% CI] | months up | whole wiki YoY | topic share of "
+                 "wiki YoY | trend | confidence |")
+    lines.append("|---|---|---|---|---|---|---|---|")
     for cell in ordered_cells(results):
         if cell.get("error"):
             lines.append(f"| {cell['label']} | - | n/a | - | - | {cell['error']} | - |")
@@ -65,14 +70,15 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
         mt = cell["metrics"]
         y = mt["yoy"]
         norm = (mt.get("yoy_normalized") or {}).get("value")
+        wiki_yoy = i18n.fmt_pct(mt.get("project_yoy"))
         if mt["direction"] == "new-article":
             lines.append(f"| {cell['label']} | {i18n.fmt_compact(mt['avg_monthly_last12'])} | n/a: article "
-                         f"started {cell.get('new_article')} | - | - | new-article | "
+                         f"started {cell.get('new_article')} | - | {wiki_yoy} | - | new-article | "
                          f"{cell['confidence']['grade']} {cell['confidence']['score']} |")
             continue
         lines.append(
             f"| {cell['label']} | {i18n.fmt_compact(mt['avg_monthly_last12'])} | {_yoy_cell(y)} | "
-            f"{y['months_up']}/12 | {i18n.fmt_pct(norm)} | {mt['direction']} | "
+            f"{y['months_up']}/12 | {wiki_yoy} | {i18n.fmt_pct(norm)} | {mt['direction']} | "
             f"{cell['confidence']['grade']} {cell['confidence']['score']} |")
 
     comps = results.get("comparisons") or []
@@ -98,7 +104,8 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
                 why.append("strong: " + ", ".join(row["strengths"]))
             if row["weaknesses"]:
                 why.append("weak: " + ", ".join(row["weaknesses"]))
-            lines.append(f"  {row['rank']}. {row['label']}  score {row['score']:.0f}  " + "; ".join(why))
+            tie = "  (≈ tied with next)" if row.get("gap_to_next") is not None and row["gap_to_next"] < 3 else ""
+            lines.append(f"  {row['rank']}. {row['label']}  score {row['score']:.1f}{tie}  " + "; ".join(why))
         if ranking["top_stable"]:
             lines.append(f"  top pick is the same under all {ranking['top_agreement']} weighting presets (robust)")
         else:
@@ -125,6 +132,9 @@ def console_summary(results: dict[str, Any], files: dict[str, str] | None = None
         lines.append("Files:")
         for k, v in files.items():
             lines.append(f"  {k}: {v}")
+    lines.append("Answer checklist: 1) verdict 2) 2-5 numbers copied from Findings 3) confidence + main reason "
+                 "(and ties/ambiguity if shown) 4) one validation step + 'pageviews show curiosity, not willingness "
+                 "to pay' 5) file paths. No causes that are not in the data.")
     return "\n".join(lines)
 
 

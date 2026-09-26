@@ -1,0 +1,282 @@
+{
+  "_comment": "Agent-level eval scenarios. 'turns' are user messages sent one after another in the same conversation. Checks are evaluated by evals/graders.py after the last turn (answer checks use the final answer unless 'turn' is given). Ground truth for --fake mode: pl +45%/yr (bot burst 2025-03-14), cs +3%, sk +20% (tiny), uk fasting article created 2025-06, uk astronomy +12% seasonal, English: uk +18%, tr +12%, pt +4%, pl +2%, es +1%, it -2%, fr -3%, de -4%, en -6%, ru -12%.",
+  "scenarios": [
+    {
+      "id": "fasting-pl-cs",
+      "source": "task example 1",
+      "turns": [
+        "Порівняй зростання інтересу до інтервального голодування в польськомовній та чеськомовній Wikipedia за останні два роки.",
+        "Додай ще словацьку і подивись на три роки."
+      ],
+      "checks": [
+        {
+          "type": "read_skill"
+        },
+        {
+          "type": "command",
+          "pattern": "wt\\.py\\s+(--\\S+\\s+)*analyze",
+          "turn": 1
+        },
+        {
+          "type": "command_langs",
+          "langs": [
+            "pl",
+            "cs"
+          ],
+          "turn": 1
+        },
+        {
+          "type": "answer_regex",
+          "turn": 1,
+          "pattern": "польськ\\w*[^.]{0,120}(швидш|сильніш|більш|випереджа|лідир)|(швидш|сильніш)[^.]{0,80}польськ"
+        },
+        {
+          "type": "answer_language",
+          "lang": "uk",
+          "turn": 1
+        },
+        {
+          "type": "numbers_verified",
+          "turn": 1
+        },
+        {
+          "type": "command_langs",
+          "langs": [
+            "pl",
+            "cs",
+            "sk"
+          ],
+          "turn": 2
+        },
+        {
+          "type": "command",
+          "pattern": "--months\\s+36|--start\\s+2023",
+          "turn": 2
+        },
+        {
+          "type": "numbers_verified",
+          "turn": 2
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "why": "mandatory caveat",
+          "turn": 1
+        },
+        {
+          "type": "max_tool_calls",
+          "n": 16
+        }
+      ]
+    },
+    {
+      "id": "astronomy-uk-trust",
+      "source": "task example 2",
+      "turns": [
+        "Ми думаємо додати курс з астрономії до освітнього застосунку. Чи зростає інтерес до цієї теми в україномовній Wikipedia, і наскільки цьому зростанню можна довіряти?"
+      ],
+      "checks": [
+        {
+          "type": "read_skill"
+        },
+        {
+          "type": "command_langs",
+          "langs": [
+            "uk"
+          ]
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "зроста|зріс|росте"
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "довір|надійн"
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "\\d+[.,]?\\d*\\s?%"
+        },
+        {
+          "type": "answer_language",
+          "lang": "uk"
+        },
+        {
+          "type": "numbers_verified"
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "why": "mandatory caveat"
+        },
+        {
+          "type": "answer_not_regex",
+          "pattern": "(пад|скороч|знижен|declin|fall)\\w*[^.]{0,40}(Wikipedia|Вікіпеді|вікі)",
+          "why": "uk.wikipedia grows +2%/yr in the fake world; claiming it fell misreads 'vs wiki'"
+        },
+        {
+          "type": "max_tool_calls",
+          "n": 10
+        }
+      ]
+    },
+    {
+      "id": "english-audiences-report",
+      "source": "task example 3 (languages named)",
+      "turns": [
+        "Ми створюємо застосунок для вивчення мов. Порівняй інтерес до вивчення англійської в німецькій, польській, українській, іспанській, турецькій і французькій Вікіпедіях та підготуй короткий звіт: які аудиторії варто дослідити наступними й чому?",
+        "А якщо для нас важливіший розмір аудиторії, ніж зростання?"
+      ],
+      "checks": [
+        {
+          "type": "read_skill"
+        },
+        {
+          "type": "command_langs",
+          "langs": [
+            "de",
+            "pl",
+            "uk",
+            "es",
+            "tr",
+            "fr"
+          ],
+          "turn": 1
+        },
+        {
+          "type": "file",
+          "glob": "wikitrends-out/*/report.pdf",
+          "pages": 1
+        },
+        {
+          "type": "answer_regex",
+          "turn": 1,
+          "pattern": "українськ|\\buk\\b"
+        },
+        {
+          "type": "answer_regex",
+          "turn": 1,
+          "pattern": "\\.pdf",
+          "keep_paths": true
+        },
+        {
+          "type": "numbers_verified",
+          "turn": 1
+        },
+        {
+          "type": "command",
+          "pattern": "wt\\.py\\s+(--\\S+\\s+)*(rank\\b.*size|analyze\\b.*--weights\\s+size)",
+          "turn": 2
+        },
+        {
+          "type": "numbers_verified",
+          "turn": 2
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "why": "mandatory caveat",
+          "turn": 1
+        },
+        {
+          "type": "max_tool_calls",
+          "n": 18
+        }
+      ]
+    },
+    {
+      "id": "english-audiences-open",
+      "source": "task example 3 (original wording, languages not named)",
+      "turns": [
+        "Ми створюємо застосунок для вивчення мов. Порівняй інтерес до вивчення англійської у вибраних нами мовних розділах та підготуй короткий звіт: які аудиторії варто дослідити наступними й чому?"
+      ],
+      "checks": [
+        {
+          "type": "read_skill"
+        },
+        {
+          "type": "command_min_langs",
+          "n": 3
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "мов|розділ"
+        },
+        {
+          "type": "numbers_verified"
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "(цікав|любозн|curiosity|curious)[^\\n]{0,160}(плат|pay|купів|purchas)|(плат|pay|purchas)[^\\n]{0,160}(цікав|любозн|curiosity)",
+          "why": "mandatory caveat"
+        },
+        {
+          "type": "max_tool_calls",
+          "n": 14
+        }
+      ]
+    },
+    {
+      "id": "fasting-new-article",
+      "source": "edge case: article created mid-window",
+      "turns": [
+        "Порівняй інтерес до інтервального голодування в польській і українській Вікіпедії. Де він росте швидше?"
+      ],
+      "checks": [
+        {
+          "type": "read_skill"
+        },
+        {
+          "type": "command_langs",
+          "langs": [
+            "pl",
+            "uk"
+          ]
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "нов\\w* стат|створен|з'явил|з’явил|new article|немає бази|не можна порівн|неможлив"
+        },
+        {
+          "type": "answer_not_regex",
+          "pattern": "україн\\w*[^.]{0,60}(росте|зростає) швидше"
+        },
+        {
+          "type": "numbers_verified"
+        }
+      ]
+    },
+    {
+      "id": "mercury-ambiguous",
+      "source": "edge case: ambiguous topic",
+      "turns": [
+        "Is interest in Mercury growing on English Wikipedia?"
+      ],
+      "checks": [
+        {
+          "type": "read_skill"
+        },
+        {
+          "type": "command",
+          "pattern": "wt\\.py\\s+(--\\S+\\s+)*(analyze|resolve)"
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "planet|element|ambig|which Mercury|Freddie"
+        },
+        {
+          "type": "answer_language",
+          "lang": "en"
+        },
+        {
+          "type": "answer_regex",
+          "pattern": "ambig|several|multiple|could (also )?mean|other meaning|disambig|which Mercury",
+          "why": "the user must be told the term is ambiguous"
+        },
+        {
+          "type": "numbers_verified"
+        }
+      ]
+    }
+  ]
+}

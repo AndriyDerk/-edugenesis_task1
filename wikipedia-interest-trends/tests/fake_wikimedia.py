@@ -84,6 +84,7 @@ def project_views(lang: str, day: D) -> int:
 PROJECTS = {  # views/day, annual growth
     "en": (240_000_000, -0.08), "pl": (3_000_000, -0.06), "cs": (1_100_000, -0.04), "uk": (1_500_000, 0.02),
     "de": (25_000_000, -0.05), "es": (30_000_000, -0.07), "tr": (4_000_000, -0.03), "fr": (22_000_000, -0.05),
+    "sk": (450_000, -0.03), "it": (18_000_000, -0.05), "pt": (12_000_000, -0.06), "ru": (30_000_000, -0.10),
 }
 
 WORLD: dict[str, dict[str, Page]] = {lang: {} for lang in PROJECTS}
@@ -113,6 +114,7 @@ _add("cs", Page("Přerušovaný půst", "Q900001",
                        spikes=[(D(2026, 1, 5), 7.0, 0.3)]),
                 {}, "Způsob stravování"))
 _add("uk", Page("Інтервальне голодування", "Q900001", Series(60, 0.3, desktop=0.2, created=D(2025, 6, 1))))
+_add("sk", Page("Prerušovaný pôst", "Q900001", Series(40, 0.20, season=0.15, desktop=0.3, noise=0.3)))
 
 # Astronomy: seasonal (school year), moderate growth in uk, event spike.
 _entity("Q333", {"en": "astronomy", "uk": "астрономія"}, {"en": "natural science that studies celestial objects"})
@@ -130,13 +132,15 @@ _entity("Q900002", {"en": "English as a second or foreign language", "uk": "ан
 for lang, title, base, growth in [("en", "English language", 25000, -0.06), ("de", "Englische Sprache", 2500, -0.04),
                                   ("pl", "Język angielski", 1400, 0.02), ("uk", "Англійська мова", 1300, 0.18),
                                   ("es", "Idioma inglés", 3000, 0.01), ("tr", "İngilizce", 900, 0.12),
-                                  ("fr", "Anglais", 2600, -0.03)]:
+                                  ("fr", "Anglais", 2600, -0.03), ("it", "Lingua inglese", 1800, -0.02),
+                                  ("pt", "Língua inglesa", 2200, 0.04), ("ru", "Английский язык", 4000, -0.12)]:
     _add(lang, Page(title, "Q1860", Series(base, growth, season=0.12, peak_month=9)))
 for lang, title, base, growth in [("en", "English as a second or foreign language", 1500, -0.02),
                                   ("de", "Englisch als Fremdsprache", 80, 0.0),
                                   ("pl", "Angielski jako język obcy", 40, 0.05),
                                   ("uk", "Англійська як іноземна", 30, 0.25),
-                                  ("es", "Inglés como lengua extranjera", 150, 0.03)]:
+                                  ("es", "Inglés como lengua extranjera", 150, 0.03),
+                                  ("pt", "Inglês como língua estrangeira", 60, 0.1)]:
     _add(lang, Page(title, "Q900002", Series(base, growth, season=0.12, peak_month=9)))
 
 # Ambiguous term.
@@ -151,6 +155,8 @@ GEO = {
     "pl": ["PL", "DE", "GB", "US", "IE"], "cs": ["CZ", "SK", "DE", "GB", "US"], "uk": ["UA", "PL", "DE", "CZ", "US"],
     "en": ["US", "GB", "IN", "CA", "AU"], "de": ["DE", "AT", "CH", "US", "GB"], "es": ["MX", "ES", "AR", "CO", "US"],
     "tr": ["TR", "DE", "AZ", "NL", "US"], "fr": ["FR", "BE", "CA", "CH", "MA"],
+    "sk": ["SK", "CZ", "DE", "GB", "AT"], "it": ["IT", "CH", "US", "DE", "GB"], "pt": ["BR", "PT", "US", "AO", "MZ"],
+    "ru": ["RU", "BY", "KZ", "UA", "DE"],
 }
 
 
@@ -247,8 +253,7 @@ class Handler(BaseHTTPRequestHandler):
         if p[:2] == ["pageviews", "aggregate"]:
             project, access, agent, gran, start, end = p[2:8]
             lang = project.split(".")[0]
-            if lang not in PROJECTS:
-                return self._json(404, not_found)
+            PROJECTS.setdefault(lang, (300_000, -0.04))
             a, b = span(start, end)
             buckets = {}
             day = a
@@ -270,8 +275,7 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---- MediaWiki
     def _mediawiki(self, lang: str, q: dict[str, str]) -> None:
-        if lang not in WORLD:
-            return self._json(404, {"error": "no such wiki"})
+        WORLD.setdefault(lang, {})  # unknown language: an empty wiki
         if q.get("action") != "query":
             return self._json(200, {"error": {"code": "badaction", "info": "unsupported"}})
         if q.get("meta") == "siteinfo":

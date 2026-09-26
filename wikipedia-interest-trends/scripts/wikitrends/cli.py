@@ -36,7 +36,14 @@ def _out_root() -> Path:
     return Path(os.environ.get("WIKITRENDS_OUT", "wikitrends-out")).resolve()
 
 
+_TRANSLIT = dict(zip("абвгґдеєжзиіїйклмнопрстуфхцчшщьюяыэёъ",
+                     ["a", "b", "v", "h", "g", "d", "e", "ie", "zh", "z", "y", "i", "i", "i", "k", "l", "m", "n",
+                      "o", "p", "r", "s", "t", "u", "f", "kh", "ts", "ch", "sh", "shch", "", "iu", "ia", "y", "e",
+                      "io", ""]))
+
+
 def _slug(text: str, limit: int = 60) -> str:
+    text = "".join(_TRANSLIT.get(ch, ch) for ch in text.lower())
     ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
     s = re.sub(r"[^a-zA-Z0-9]+", "-", ascii_text).strip("-").lower()
     return s[:limit].strip("-") or "topic"
