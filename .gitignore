@@ -7,3 +7,6 @@ wikitrends-out/
 
 # eval workspaces (transcripts/results summaries are copied to evals/results)
 wikipedia-interest-trends/evals/runs/
+
+# local delivery artefacts
+dist/
