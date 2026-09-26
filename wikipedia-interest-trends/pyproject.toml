@@ -1,0 +1,28 @@
+[project]
+name = "wikipedia-interest-trends"
+version = "1.0.0"
+description = "Agent skill: Wikipedia pageview research for product decisions (trends, cross-language comparison, confidence, charts, one-page PDF)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+# Runtime deps are only needed for charts and PDF; the analysis core is stdlib-only.
+dependencies = [
+    "matplotlib>=3.8,<4",
+    "reportlab>=4.0,<6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pypdf>=4",
+    "pymannkendall>=1.4",
+    "skills-ref>=0.1; python_version >= '3.11'",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["scripts"]
+addopts = "-q"
