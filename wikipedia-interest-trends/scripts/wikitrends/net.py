@@ -40,12 +40,26 @@ class OfflineError(NetError):
 
 
 class RateLimiter:
-    """Guarantees a minimum interval between request starts (thread-safe)."""
+    """Guarantees a minimum interval between request starts (thread-safe).
 
-    def __init__(self, rps: float):
+    ``pause`` makes *all* threads wait (server said Retry-After) and slows the
+    pace down; every successful request speeds it back up towards the target."""
+
+    def __init__(self, rps: float, sleep: Callable[[float], None] = time.sleep):
+        self._sleep = sleep
         self.interval = 1.0 / rps if rps > 0 else 0.0
+        self.base_interval = self.interval
         self._lock = threading.Lock()
         self._next = 0.0
+
+    def pause(self, seconds: float) -> None:
+        with self._lock:
+            self._next = max(self._next, time.monotonic() + seconds)
+            self.interval = min(max(self.interval * 2, 0.5), 10.0)
+
+    def success(self) -> None:
+        with self._lock:
+            self.interval = max(self.base_interval, self.interval * 0.95)
 
     def wait(self) -> None:
         with self._lock:
@@ -54,7 +68,7 @@ class RateLimiter:
             self._next = slot + self.interval
         delay = slot - now
         if delay > 0:
-            time.sleep(delay)
+            self._sleep(delay)
 
 
 def _retry_after(headers: Any) -> float | None:
@@ -83,7 +97,7 @@ class Client:
         on_wait: Callable[[str], None] | None = None,
     ):
         self.user_agent = user_agent
-        self.limiter = RateLimiter(rps)
+        self.limiter = RateLimiter(rps, sleep)
         self.retries = retries
         self.timeout = timeout
         self.offline = offline
@@ -127,6 +141,7 @@ class Client:
                     if (resp.headers.get("Content-Encoding") or "").lower() == "gzip":
                         raw = gzip.decompress(raw)
                 self._count("requests")
+                self.limiter.success()
                 try:
                     return json.loads(raw.decode("utf-8"))
                 except (ValueError, UnicodeDecodeError) as exc:
@@ -144,10 +159,12 @@ class Client:
                     self._count("retries")
                     delay = self._backoff(attempt, _retry_after(exc.headers))
                     if exc.code == 429:
+                        self.limiter.pause(delay)  # everyone waits, instead of each thread hitting 429
                         host = urllib.parse.urlsplit(url).hostname
                         self.on_wait(f"rate limited by {host}; waiting {delay:.0f}s (attempt {attempt + 1}/"
                                      f"{self.retries}) - this is normal on shared networks, keep waiting")
-                    self._sleep(delay)
+                    if exc.code != 429:
+                        self._sleep(delay)
                     attempt += 1
                     continue
                 hint = ""

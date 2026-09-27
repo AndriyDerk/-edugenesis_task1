@@ -145,7 +145,10 @@ def test_client_retries_429_with_retry_after():
 
     c = Client("ua-test", rps=1000, opener=opener, sleep=sleeps.append)
     assert c.get_json("http://x/a", {"q": "ü"}) == {"ok": 1}
-    assert sleeps == [2.0, 2.0]
+    # Retry-After pauses the shared limiter, so the next request waits ~2 s
+    # (plus the slowed-down pacing after a 429)
+    assert len([s for s in sleeps if s > 1.5]) == 2 and all(s <= 3.0 for s in sleeps)
+    assert c.limiter.interval > c.limiter.base_interval
     assert calls[0].get_header("User-agent") == "ua-test"
     assert "q=%C3%BC" in calls[0].full_url
     assert c.stats == {"requests": 3, "retries": 2}

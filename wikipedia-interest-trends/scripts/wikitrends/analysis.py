@@ -22,6 +22,10 @@ from .stats import bootstrap_ci, seasonal_kendall, seasonal_sen_slope, sign_test
 from .wiki import SeriesKey, Wiki
 
 SCHEMA = "wikitrends/1"
+# Wikimedia updated its bot detection in 2025 and reclassified spring-summer traffic
+# (https://diff.wikimedia.org/2025/10/17/new-user-trends-on-wikipedia/): "user" views
+# before the change still contain bots, so comparisons across it are biased downwards.
+BOT_UPDATE_2025 = ("2025-03", "2025-08")
 CI_ALPHA = 0.10  # 90% intervals
 BOOT_REPS = 4000
 
@@ -276,7 +280,8 @@ def assess_confidence(cell: dict[str, Any]) -> dict[str, Any]:
         elif (dy > 0) == (my > 0):
             add(0, "platforms_agree", desktop=dy, mobile=my)
 
-    penalties = {"late_start": 35, "dropped_to_zero": 35, "level_shift": 10, "incomplete_basket": 10,
+    penalties = {"late_start": 35, "dropped_to_zero": 35, "level_shift": 10, "bot_update_2025": 10,
+                 "incomplete_basket": 10,
                  "redirects_truncated": 5, "fetch_errors": 15, "new_item": 20}
     for flag in cell["flags"]:
         if flag["code"] in penalties:
@@ -626,7 +631,10 @@ def build_cell(topic: dict[str, Any], lang: str, data: dict[SeriesKey, dict[str,
     per_day = [c / d if d else 0.0 for c, d in zip(monthly["clean"], m_days)]
     shift = level_shift(per_day, months)
     if shift and not start_day and not end_day:
-        flag("level_shift", month=shift["month"], ratio=shift["ratio"])
+        if BOT_UPDATE_2025[0] <= shift["month"] <= BOT_UPDATE_2025[1]:
+            flag("bot_update_2025", month=shift["month"], ratio=shift["ratio"])
+        else:
+            flag("level_shift", month=shift["month"], ratio=shift["ratio"])
     if res["missing"]:
         flag("incomplete_basket", items=res["missing"])
     if any(a["redirects_truncated"] for a in res["articles"]):
@@ -642,6 +650,10 @@ def build_cell(topic: dict[str, Any], lang: str, data: dict[SeriesKey, dict[str,
 
 def run(wiki: Wiki, params: Params) -> dict[str, Any]:
     window = params.window
+    if window.months[-24] <= BOT_UPDATE_2025[0] <= window.months[-1]:
+        params.notes.append(
+            "the comparison spans Wikimedia's 2025 bot-detection update: older 'human' views still include some "
+            "bots, so raw declines are overstated - rely on 'topic share of wiki YoY'")
     wiki.progress(f"resolving {len(params.topics)} topic(s) in {len(params.langs)} language(s)")
     resolution = resolve_topics(wiki, params.topics, params.langs, search_lang=params.search_lang,
                                 include_redirects=params.include_redirects,

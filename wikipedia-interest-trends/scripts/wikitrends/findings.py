@@ -175,7 +175,12 @@ def findings(results: dict[str, Any], lang: str = "en", max_cells: int = 6) -> l
         geo = results.get("geo", {}).get(top_lang)
         if geo and geo.get("top"):
             countries = ", ".join(country_name(r["country"], lang) for r in geo["top"][:4])
-            out.append(i18n.text("geo", lang, wiki=f"{top_lang}.wikipedia", countries=countries))
+            ranks = [r["rank"] for r in geo["top"] if isinstance(r.get("rank"), int)]
+            hidden = [i for i in range(1, (max(ranks) if ranks else 0) + 1) if i not in ranks]
+            line = i18n.text("geo", lang, wiki=f"{top_lang}.wikipedia", countries=countries)
+            if hidden:
+                line = line[:-1] + i18n.text("geo_hidden", lang, ranks=", ".join(map(str, hidden)))
+            out.append(line)
     return out
 
 

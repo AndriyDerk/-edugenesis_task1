@@ -146,6 +146,8 @@ REASONS = {
         "redirects_truncated": "some redirects were not counted (too many)",
         "fetch_errors": "{n} series failed to download",
         "new_item": "basket article '{title}' only appeared on {date} and makes up {share} of recent views: growth is inflated",
+        "bot_update_2025": "abrupt x{ratio} level change around {month}, when Wikimedia updated bot detection: part of "
+                           "the earlier 'human' views were bots, so the raw trend is distorted",
     },
     "uk": {
         "very_low_volume": "дуже малий обсяг ({per_day} перегл./день): домінує випадковий шум",
@@ -172,6 +174,8 @@ REASONS = {
         "redirects_truncated": "частину перенаправлень не враховано (їх забагато)",
         "fetch_errors": "не вдалося завантажити рядів: {n}",
         "new_item": "стаття кошика «{title}» з’явилась лише {date} і дає {share} недавніх переглядів: зростання завищене",
+        "bot_update_2025": "різка зміна рівня ×{ratio} близько {month}, коли Wikimedia оновила виявлення ботів: частина "
+                           "раніших «людських» переглядів була ботами, тож сирий тренд спотворений",
     },
 }
 
@@ -244,6 +248,8 @@ TEXT = {
         "longrun": "Long-run trend for {name} over {n} months: {sen}/year (seasonal Kendall {p}).",
         "missing": "{name}: no article exists, so this language cannot be measured for the topic.",
         "geo": "Readers of {wiki} are mostly in: {countries}.",
+        "geo_hidden": " (Wikimedia withholds some countries for privacy: rank(s) {ranks} not shown, so the "
+                      "largest audience may be missing from this list).",
     },
     "uk": {
         "headline": "{name} — {direction}: {yoy} рік до року без сплесків (90% ДІ {lo}…{hi}; "
@@ -271,6 +277,8 @@ TEXT = {
         "longrun": "{name}: довгостроковий тренд за {n} міс. {sen}/рік (сезонний тест Кендалла {p}).",
         "missing": "{name}: статті немає, тож цю мову для теми виміряти неможливо.",
         "geo": "Читачі {wiki} переважно з: {countries}.",
+        "geo_hidden": " (Wikimedia приховує деякі країни з міркувань приватності: місця {ranks} не показано, тож "
+                      "найбільша аудиторія може бути відсутня в цьому списку).",
     },
 }
 
@@ -365,6 +373,9 @@ _NOTE_PATTERNS = [
      "«{q}» — неоднозначна назва на {w}; обрано «{t}» — перевірте альтернативи"),
     (r"period extended from (?P<a>\d+) to (?P<b>\d+) months \((?P<r>[^)]+)\).*",
      "період розширено з {a} до {b} міс. ({r}), щоб порівняти останні 12 місяців із попередніми 12"),
+    (r"the comparison spans Wikimedia's 2025 bot-detection update.*",
+     "період порівняння охоплює оновлення виявлення ботів Wikimedia у 2025 р.: старіші «людські» перегляди ще "
+     "містять ботів, тож сирі спади перебільшені — орієнтуйтеся на зміну частки теми у вікі"),
     (r"'(?P<t>.+)' in (?P<l>[\w-]+): missing article\(s\) for (?P<i>.+) - basket is not fully comparable across languages",
      "«{t}» ({l}): немає статей для {i} — кошик не повністю порівнюваний між мовами"),
 ]
