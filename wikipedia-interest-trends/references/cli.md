@@ -85,6 +85,7 @@ prints raw CSV for one article (redirects resolved to the canonical title, not s
 | `WIKITRENDS_OUT` | `./wikitrends-out` | Default output root. |
 | `WIKITRENDS_CONTACT` | - | Contact (email/URL) appended to the User-Agent, as Wikimedia's policy asks. |
 | `WIKITRENDS_MAX_RPS` | `2.5` | Request rate limit across all hosts. |
+| `WIKITRENDS_API_TOKEN` | - | Wikimedia personal API token (sent as `Authorization: Bearer`); anonymous traffic from shared cloud IPs is often throttled with HTTP 429. |
 | `WIKITRENDS_WORKERS` | `4` | Parallel downloads. |
 | `WIKITRENDS_OFFLINE` | - | `1` = use cached data only. |
 | `WIKITRENDS_TODAY` | today | Pin "today" (reproducible runs, tests). |

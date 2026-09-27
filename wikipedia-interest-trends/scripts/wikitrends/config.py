@@ -47,6 +47,11 @@ def user_agent() -> str:
     return f"wikipedia-interest-trends/{__version__} (+{PROJECT_URL}{extra}) python-urllib"
 
 
+def api_token() -> str | None:
+    """Optional Wikimedia API token (WIKITRENDS_API_TOKEN) for higher rate limits."""
+    return os.environ.get("WIKITRENDS_API_TOKEN", "").strip() or None
+
+
 def rest_base() -> str:
     return _env("WIKITRENDS_REST_BASE", "https://wikimedia.org/api/rest_v1").rstrip("/")
 

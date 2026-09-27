@@ -28,7 +28,8 @@ class UserError(Exception):
 # ------------------------------------------------------------------ plumbing
 def _make_wiki(args: argparse.Namespace) -> Wiki:
     cache = Cache(None if getattr(args, "no_cache", False) else config.cache_path())
-    client = Client(config.user_agent(), rps=config.max_rps(), offline=config.offline())
+    client = Client(config.user_agent(), rps=config.max_rps(), offline=config.offline(), token=config.api_token(),
+                    on_wait=stderr_progress)
     return Wiki(client, cache, progress=None if getattr(args, "quiet", False) else stderr_progress)
 
 

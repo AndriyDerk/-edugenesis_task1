@@ -79,6 +79,8 @@ class Client:
         offline: bool = False,
         opener: Callable[..., Any] | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        token: str | None = None,
+        on_wait: Callable[[str], None] | None = None,
     ):
         self.user_agent = user_agent
         self.limiter = RateLimiter(rps)
@@ -87,6 +89,8 @@ class Client:
         self.offline = offline
         self._open = opener or urllib.request.urlopen
         self._sleep = sleep
+        self.token = token
+        self.on_wait = on_wait or (lambda msg: None)
         self._stats_lock = threading.Lock()
         self.stats = {"requests": 0, "retries": 0}
 
@@ -110,6 +114,9 @@ class Client:
             "Accept": "application/json",
             "Accept-Encoding": "gzip",
         }
+        if self.token:
+            # personal API token / OAuth: much higher Wikimedia rate limits than anonymous traffic
+            headers["Authorization"] = f"Bearer {self.token}"
         attempt = 0
         while True:
             self.limiter.wait()
@@ -135,7 +142,12 @@ class Client:
                     raise NotFound(f"404 for {url}", status=404, url=url) from None
                 if exc.code in RETRY_STATUSES and attempt < self.retries:
                     self._count("retries")
-                    self._sleep(self._backoff(attempt, _retry_after(exc.headers)))
+                    delay = self._backoff(attempt, _retry_after(exc.headers))
+                    if exc.code == 429:
+                        host = urllib.parse.urlsplit(url).hostname
+                        self.on_wait(f"rate limited by {host}; waiting {delay:.0f}s (attempt {attempt + 1}/"
+                                     f"{self.retries}) - this is normal on shared networks, keep waiting")
+                    self._sleep(delay)
                     attempt += 1
                     continue
                 hint = ""

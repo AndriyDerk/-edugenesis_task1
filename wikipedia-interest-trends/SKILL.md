@@ -131,7 +131,7 @@ The PDF (A4, always one page), `report.md` and PNG charts are written into the r
 | `ambiguous ... picked ...` | Check `other candidates`; re-run with the right `Q...` id. |
 | `not a Wikipedia language code` | Use codes like `uk`, `pl`, `cs` (not country codes or names). |
 | `NETWORK ERROR ... blocked` | Tell the user which host must be allowed; `doctor` diagnoses connectivity. |
-| `HTTP 429` | Wait a minute and retry; data already downloaded stays cached. |
+| `rate limited ... waiting` / `HTTP 429` | Normal on shared networks: the tool waits and retries by itself, keep waiting. If it still fails, retry in a few minutes (downloaded data stays cached) or set `WIKITRENDS_API_TOKEN`. |
 | charts/PDF `skipped` | Run `setup`, then `report <folder>`. |
 
 ## References (read only when needed)
