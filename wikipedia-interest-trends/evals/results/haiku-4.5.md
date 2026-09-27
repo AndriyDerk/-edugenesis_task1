@@ -70,3 +70,15 @@ check was fixed, not the verdict.
 
 Next steps for this failure mode are in `docs/ROADMAP.md` (MCP tools returning structured data,
 and a `draft` command that writes the recommendation paragraph from the ranking).
+
+
+## Live Wikimedia data (2026-09-27)
+
+After network access was granted, Haiku 4.5 ran the three reference questions on **real**
+Wikipedia data (same subagent setup, no mirror):
+
+| question | checks | notes |
+|---|---|---|
+| intermittent fasting, pl vs cs | 7/8 | Correct and honest. Polish Wikipedia has **no** article on intermittent fasting (not linked to Q1666254, not found by search), so pl cannot be measured. Czech −42.6 % with LOW confidence (6 views/day). The failed check expects the synthetic ground truth ("Polish grows faster") and does not apply to real data. |
+| astronomy in Ukrainian Wikipedia | 9/9 | Reports −60.1 % YoY but explains the MEDIUM grade: a ×0.3 level shift in 2025-05 coinciding with Wikimedia's bot-detection update. Points to the share-of-wiki metric (−47.0 %). |
+| learning English, 6 languages | 9/9 | PDF built. Interest in the basket falls in all six editions; tr ≈ de on top (tie). Two small slips that no check catches: "Turkish has the smallest decline" (German does) and "German has the largest audience" (Spanish does). |

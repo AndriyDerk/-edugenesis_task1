@@ -56,8 +56,9 @@ strength of looking plausible; every layer has an independent check:
 5. **Agent-level evals with a cheap model**, graded automatically (see below) *and* read by a person.
    Manual reading found problems the first graders missed, and those checks were added to the graders.
 6. **Live smoke tests** (`tests/test_live.py`, `WIKITRENDS_LIVE=1`) pin the production API shapes.
-   They could not run in the development sandbox (egress to Wikimedia blocked); run them once
-   network access is available.
+   Run against the real APIs on 2026-09-27: the response shapes match the fake server. The one
+   failing assertion was a wrong assumption in the test (Polish Wikipedia has no
+   intermittent-fasting article) and was corrected.
 
 ### Bugs found this way (and fixed)
 
@@ -82,6 +83,10 @@ strength of looking plausible; every layer has an independent check:
 | eval (Haiku) | A heading drifted into Russian inside a Ukrainian answer | `answer_language` grader counts Russian-only letters and words. |
 | eval (Haiku) | `rank` follow-up did not show near-ties (uk 76.1 vs es 74.1) | Tie groups anchored on their best member, shown by `analyze` and `rank`. |
 | grader review | "ambig" matched inside a *file path*; "90% CI" counted as a claim | Paths stripped before text checks; CI-level detection on both sides of the number. |
+| live API | Wikimedia rate-limits shared cloud IPs (HTTP 429, Retry-After ~50 s); 4 threads each hit it separately | Retry-After pauses all threads and slows the pace adaptively; progress message while waiting; optional `WIKITRENDS_API_TOKEN`. |
+| live API | Many series show a sudden drop around 2025-05 (Wikimedia's bot-detection update), which biases every YoY comparison across it | Specific `bot_update_2025` caveat and a window-level note pointing to the share-of-wiki metric. |
+| live API | `top-by-country` omits some countries for privacy (e.g. rank 1 for tr.wikipedia), so "readers mostly in US, DE" was misleading | Rank gaps are detected and stated. |
+| live API | Polish Wikipedia has no article on intermittent fasting (reference question 1) | Handled as designed: "cannot be measured", not zero interest. |
 
 ## Eval results (Claude Haiku 4.5, fake world)
 

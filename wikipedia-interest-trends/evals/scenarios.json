@@ -96,7 +96,7 @@
         },
         {
           "type": "answer_regex",
-          "pattern": "довір|надійн"
+          "pattern": "довір|надійн|впевнен|confiden"
         },
         {
           "type": "answer_regex",

@@ -53,7 +53,10 @@ def test_resolution_via_search_and_wikidata(wiki):
     res = resolve_topics(wiki, [TopicSpec(None, ["Intermittent fasting"])], ["pl", "cs", "uk"])
     item = res["topics"][0]["items"][0]
     assert item["qid"] and item["qid"].startswith("Q")
-    assert res["topics"][0]["cells"]["pl"]["articles"], "Polish article expected"
+    assert res["topics"][0]["cells"]["cs"]["articles"], "Czech article expected"
+    # Polish Wikipedia has no linked article (checked 2026-09): must be reported, not crash
+    if not res["topics"][0]["cells"]["pl"]["articles"]:
+        assert any("Polish" in w for w in res["warnings"])
     info = wiki.page_info("en", ["Astronomy"])["Astronomy"]
     assert info["exists"] and info["qid"] == "Q333" and info["redirects"]
 

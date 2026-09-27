@@ -52,9 +52,25 @@ def _langs_in(cmd: str) -> set[str]:
     return langs
 
 
+def _cd_dirs(transcript: dict[str, Any] | None) -> list[str]:
+    """Directories the agent cd-ed into: outputs land there, not always in the workspace."""
+    dirs = []
+    for t in (transcript or {}).get("turns", []):
+        for call in t["tool_calls"]:
+            for m in re.finditer(r"\bcd\s+([\"']?)(/[^\"'\s;&]+)\1", call["args"].get("command", "") if
+                                 isinstance(call.get("args"), dict) else ""):
+                dirs.append(m.group(2))
+    return list(dict.fromkeys(dirs))
+
+
 def _results_files(workspace: str, transcript: dict[str, Any] | None = None) -> list[Path]:
     """results.json files in the workspace plus any the tool printed (agents may use --out)."""
     files = {Path(p) for p in glob.glob(f"{workspace}/**/results.json", recursive=True)}
+    blob = json.dumps(transcript or {}, ensure_ascii=False)
+    for d in _cd_dirs(transcript):
+        # only analyses this conversation produced (the folder name appears in its tool output)
+        files.update(Path(p) for p in glob.glob(f"{d}/wikitrends-out/*/results.json")
+                     if Path(p).parent.name in blob)
     for t in (transcript or {}).get("turns", []):
         for call in t["tool_calls"]:
             for m in re.finditer(r"(/\S+?/results\.json)", call.get("output", "")):
@@ -135,6 +151,8 @@ def run_check(check: dict[str, Any], tr: dict[str, Any]) -> tuple[bool, str]:
         return best >= check["n"], f"max languages in one analyze: {best}"
     if kind == "file":
         files = sorted(glob.glob(f"{tr['workspace']}/{check['glob']}"))
+        for d in _cd_dirs(tr):
+            files += sorted(glob.glob(f"{d}/{check['glob']}"))
         if not files:
             return False, f"no file {check['glob']}"
         if "pages" in check:
@@ -197,7 +215,10 @@ def run_check(check: dict[str, Any], tr: dict[str, Any]) -> tuple[bool, str]:
 
 def grade(scenario: dict[str, Any], transcript: dict[str, Any]) -> dict[str, Any]:
     results = []
+    n_turns = len(transcript.get("turns", []))
     for check in scenario["checks"]:
+        if check.get("turn", 1) > n_turns:
+            continue  # the conversation was shorter than the scenario (e.g. --turns 1)
         try:
             ok, detail = run_check(check, transcript)
         except Exception as exc:  # noqa: BLE001 - a broken check must not hide others
